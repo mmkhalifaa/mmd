@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic AI — Relocation Assistant Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0A1628;--bg2:#0F1D32;--bg3:#131F35;--card:#182740;
+  --border:#1E3A5F;--text:#E2E8F0;--text2:#94A3B8;--text3:#64748B;
+  --blue:#3B82F6;--green:#10B981;--purple:#8B5CF6;--amber:#F59E0B;
+  --red:#EF4444;--cyan:#06B6D4;--pink:#EC4899;--indigo:#6366F1;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif}
+h1,h2,h3,h4,h5{font-family:'Space Grotesk',sans-serif}
+code,.mono{font-family:'JetBrains Mono',monospace}
+
+.app{display:flex;height:100vh;position:relative}
+.chat-panel{flex:1;display:flex;flex-direction:column;border-right:1px solid var(--border);min-width:0}
+.agent-panel{width:460px;display:flex;flex-direction:column;background:var(--bg2);flex-shrink:0}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.topbar .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:16px}
+.topbar h2{font-size:15px;font-weight:600}
+.topbar .tag{font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(59,130,246,.15);color:var(--blue);font-weight:500}
+
+/* Chat */
+.chat-area{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.chat-area::-webkit-scrollbar{width:6px}
+.chat-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.msg{display:flex;gap:10px;max-width:88%;animation:fadeUp .4s ease}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg .avatar{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px}
+.msg.ai .avatar{background:linear-gradient(135deg,var(--blue),var(--purple))}
+.msg.user .avatar{background:var(--card);border:1px solid var(--border)}
+.msg .bubble{padding:11px 15px;border-radius:14px;font-size:13px;line-height:1.6}
+.msg.ai .bubble{background:var(--bg3);border:1px solid var(--border);border-top-left-radius:4px}
+.msg.user .bubble{background:linear-gradient(135deg,var(--blue),var(--indigo));border-top-right-radius:4px}
+.typing{display:flex;gap:4px;padding:8px 14px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--text3);animation:blink 1.4s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+/* Gen UI */
+.gen-ui{animation:fadeUp .5s ease;margin:4px 0 4px 40px;max-width:calc(100% - 40px)}
+.gen-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:10px;transition:all .3s}
+.gen-card h4{font-size:13px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.gen-card h4 .icon{font-size:15px}
+.clarify-grid{display:flex;flex-direction:column;gap:6px}
+.clarify-opt{padding:10px 14px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);cursor:pointer;transition:all .3s;font-size:12px;display:flex;align-items:center;gap:10px}
+.clarify-opt:hover{border-color:var(--blue);background:rgba(59,130,246,.08)}
+.clarify-opt.selected{border-color:var(--blue);background:rgba(59,130,246,.12)}
+.clarify-opt.selected::after{content:'✓';margin-left:auto;color:var(--blue);font-weight:700}
+.clarify-opt .opt-icon{font-size:16px}
+.house-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.house-card{border-radius:12px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);cursor:pointer;transition:all .3s}
+.house-card:hover{border-color:var(--green);transform:translateY(-2px)}
+.house-card.selected{border-color:var(--green);box-shadow:0 0 20px rgba(16,185,129,.15)}
+.house-img{height:90px;position:relative;overflow:hidden}
+.house-img .tag-price{position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;color:#fff}
+.house-info{padding:10px}
+.house-info h5{font-size:12px;font-weight:600;margin-bottom:3px}
+.house-info p{font-size:10px;color:var(--text2);line-height:1.4}
+.house-info .specs{display:flex;gap:8px;margin-top:6px;font-size:10px;color:var(--text3)}
+.school-card{display:flex;gap:12px;padding:12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);margin-bottom:6px;cursor:pointer;transition:all .3s}
+.school-card:hover{border-color:var(--purple)}
+.school-card.selected{border-color:var(--purple);background:rgba(139,92,246,.08)}
+.school-badge{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.school-card h5{font-size:12px;font-weight:600;margin-bottom:2px}
+.school-card .rating{font-size:10px;color:var(--amber)}
+.school-card p{font-size:10px;color:var(--text2);margin-top:3px}
+.budget-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
+.budget-row:last-child{border:none;font-weight:600;color:var(--amber)}
+.budget-bar{height:5px;border-radius:3px;background:var(--bg);margin-top:3px;overflow:hidden}
+.budget-bar .fill{height:100%;border-radius:3px;transition:width 1s ease}
+.timeline-item{display:flex;gap:10px;padding:7px 0}
+.timeline-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;position:relative}
+.timeline-dot::after{content:'';position:absolute;top:14px;left:4px;width:2px;height:calc(100% + 6px);background:var(--border)}
+.timeline-item:last-child .timeline-dot::after{display:none}
+.timeline-item h5{font-size:12px;font-weight:500}
+.timeline-item p{font-size:10px;color:var(--text2);margin-top:2px}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.summary-item{padding:12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border)}
+.summary-item .label{font-size:9px;text-transform:uppercase;color:var(--text3);letter-spacing:1px;margin-bottom:3px}
+.summary-item .value{font-size:13px;font-weight:600}
+.input-area{padding:14px 20px;background:var(--bg2);border-top:1px solid var(--border);display:flex;gap:10px;align-items:center}
+.input-box{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border .3s}
+.input-box:focus{border-color:var(--blue)}
+.input-box::placeholder{color:var(--text3)}
+.ctrl-btn{padding:9px 18px;border-radius:10px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .3s;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.ctrl-btn.primary{background:linear-gradient(135deg,var(--blue),var(--indigo));color:#fff}
+.ctrl-btn.primary:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(59,130,246,.3)}
+.ctrl-btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+
+/* ===== REDESIGNED AGENT PANEL ===== */
+.agent-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;justify-content:space-between}
+.agent-header h3{font-size:13px;font-weight:600}
+.agent-header .live{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* View mode toggle */
+.view-toggle{display:flex;gap:0;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;height:26px}
+.toggle-btn{flex:1;padding:0 10px;font-size:10px;font-weight:600;border:none;background:transparent;color:var(--text3);cursor:pointer;transition:all .3s;white-space:nowrap}
+.toggle-btn.active{background:var(--blue);color:#fff}
+body[data-view-mode="tech"] .toggle-btn[data-mode="tech"]{background:var(--blue);color:#fff}
+body[data-view-mode="biz"] .toggle-btn[data-mode="biz"]{background:var(--blue);color:#fff}
+
+/* Completed agents strip at top */
+.done-strip{padding:8px 14px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);min-height:0;transition:all .3s}
+.done-strip:empty{padding:0;border:none}
+.done-chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;font-size:10px;font-weight:500;cursor:pointer;transition:all .3s;border:1px solid var(--border);background:var(--bg)}
+.done-chip .dc-icon{font-size:12px}
+.done-chip .dc-check{color:var(--green);font-size:10px}
+.done-chip:hover{border-color:var(--blue);background:rgba(59,130,246,.05)}
+.done-chip.reviewing{border-color:var(--blue);background:rgba(59,130,246,.08)}
+
+/* Active agent hero section */
+.active-agent{display:flex;flex-direction:column;flex:1;min-height:0}
+.aa-header{padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:2}
+.aa-header .aa-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.aa-header .aa-name{font-size:13px;font-weight:600}
+.aa-header .aa-role{font-size:9px;color:var(--text3);margin-top:1px}
+.aa-header .a-status{font-size:9px;padding:3px 8px;border-radius:6px;font-weight:500;margin-left:auto}
+.a-status.idle{background:rgba(100,116,139,.15);color:var(--text3)}
+.a-status.running{background:rgba(59,130,246,.15);color:var(--blue);animation:pulse 1.5s infinite}
+.a-status.thinking{background:rgba(139,92,246,.15);color:var(--purple);animation:pulse 1.5s infinite}
+.a-status.done{background:rgba(16,185,129,.15);color:var(--green)}
+.a-status.waiting{background:rgba(245,158,11,.15);color:var(--amber)}
+.a-status.extracting{background:rgba(6,182,212,.15);color:var(--cyan);animation:pulse 1.5s infinite}
+
+/* The scrollable trace log */
+.trace-log{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px;scroll-behavior:smooth}
+.trace-log::-webkit-scrollbar{width:5px}
+.trace-log::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* Empty state */
+.trace-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);gap:8px;text-align:center;padding:40px}
+.trace-empty .te-icon{font-size:32px;opacity:.4}
+.trace-empty .te-text{font-size:12px;line-height:1.6}
+
+/* Review panel (for viewing completed agents) */
+.review-panel{display:none;flex-direction:column;flex:1;min-height:0}
+.review-panel.visible{display:flex}
+.review-header{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);background:var(--bg)}
+.review-header .back-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:10px;cursor:pointer;font-family:'Space Grotesky',sans-serif;transition:all .2s}
+.review-header .back-btn:hover{border-color:var(--blue);color:var(--blue)}
+.review-scroll{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+.review-scroll::-webkit-scrollbar{width:5px}
+.review-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* Trace entry base */
+.trace-entry{animation:traceIn .4s ease both;opacity:0}
+@keyframes traceIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Hide/show by mode */
+body[data-view-mode="tech"] [data-mode="biz"]{display:none}
+body[data-view-mode="biz"] [data-mode="tech"]{display:none}
+
+/* System prompt */
+.t-sysprompt{padding:9px 11px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:9px}
+.t-sysprompt .t-label{display:flex;align-items:center;gap:5px;font-weight:600;color:var(--indigo);font-size:9px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.t-sysprompt code{display:block;font-size:9px;line-height:1.6;color:var(--text2);white-space:pre-wrap;max-height:120px;overflow-y:auto}
+.t-sysprompt code::-webkit-scrollbar{width:3px}
+.t-sysprompt code::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* Thought / reasoning */
+.t-thought{padding:7px 10px;background:rgba(139,92,246,.06);border-left:2px solid var(--purple);border-radius:0 7px 7px 0;font-size:10px;line-height:1.6;color:var(--text2)}
+.t-thought .t-label{font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);font-weight:600;margin-bottom:3px;display:block}
+
+/* Tool call */
+.t-tool{padding:8px 10px;background:var(--bg);border-radius:9px;border-left:2px solid var(--cyan)}
+.t-tool .t-head{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.t-tool .t-icon{font-size:13px}
+.t-tool .t-name{color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500}
+.t-tool .t-status{margin-left:auto;font-size:9px;font-weight:600}
+.t-tool .t-status.ok{color:var(--green)}
+.t-tool .t-status.loading{color:var(--blue);animation:pulse 1s infinite}
+.t-tool .t-status.warn{color:var(--amber)}
+.t-tool .t-params{margin-top:3px;padding:5px 8px;background:rgba(0,0,0,.2);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);line-height:1.5;white-space:pre-wrap}
+.t-tool .t-result{margin-top:4px;padding:6px 8px;background:rgba(16,185,129,.04);border-radius:6px;font-size:9px;color:var(--text2);line-height:1.5;border-left:2px solid var(--green);white-space:pre-wrap}
+
+/* Doc extraction */
+.t-extract{padding:9px 11px;background:rgba(6,182,212,.04);border:1px solid rgba(6,182,212,.12);border-radius:9px}
+.t-extract .t-label{display:flex;align-items:center;gap:5px;font-weight:600;color:var(--cyan);font-size:9px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.t-extract .t-field{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:10px;border-bottom:1px solid rgba(255,255,255,.03)}
+.t-extract .t-field:last-child{border:none}
+.t-extract .t-key{color:var(--text3);min-width:100px;font-size:9px}
+.t-extract .t-val{color:var(--text);font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500}
+.t-extract .t-conf{margin-left:auto;font-size:8px;padding:1px 5px;border-radius:3px}
+.t-conf.high{background:rgba(16,185,129,.15);color:var(--green)}
+.t-conf.med{background:rgba(245,158,11,.15);color:var(--amber)}
+
+/* Guardrail */
+.t-guard{padding:8px 10px;background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.12);border-radius:9px}
+.t-guard .t-label{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.t-guard .t-rule{display:flex;align-items:center;gap:6px;font-size:10px;padding:3px 0}
+.t-guard .t-ricon{font-size:11px}
+.t-guard .t-rresult{margin-left:auto;font-size:9px;font-weight:500}
+
+/* Escalation */
+.t-escalation{padding:10px 11px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:9px}
+.t-escalation .t-label{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.t-escalation .t-reason{font-size:10px;color:var(--text2);line-height:1.5;margin-bottom:4px}
+.t-escalation .t-rule-detail{font-size:9px;padding:6px 8px;background:rgba(0,0,0,.15);border-radius:6px;color:var(--text3);line-height:1.4}
+
+/* Memory */
+.t-memory{padding:6px 10px;background:rgba(236,72,153,.04);border-left:2px solid var(--pink);border-radius:0 7px 7px 0;font-size:9px;color:var(--text3);line-height:1.5}
+.t-memory .t-label{font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--pink);font-weight:600;margin-bottom:2px;display:block}
+
+/* Confidence */
+.t-conf-bar{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:9px}
+.t-conf-bar .tcb-label{color:var(--text3);min-width:80px}
+.t-conf-bar .tcb-track{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.t-conf-bar .tcb-fill{height:100%;border-radius:2px;transition:width .8s ease}
+.t-conf-bar .tcb-val{font-family:'JetBrains Mono',monospace;font-weight:600;min-width:32px;text-align:right}
+
+/* Data flow */
+.t-flow{padding:6px 10px;background:rgba(99,102,241,.05);border-radius:7px;font-size:9px;display:flex;align-items:center;gap:4px;color:var(--text3)}
+.t-flow .tf-from{color:var(--indigo);font-weight:500}
+.t-flow .tf-arrow{opacity:.5}
+.t-flow .tf-to{color:var(--green);font-weight:500}
+.t-flow .tf-what{color:var(--text2);margin-left:4px}
+
+/* Confidence group wrapper */
+.t-conf-group{padding:6px 10px;background:rgba(16,185,129,.03);border-radius:8px;display:flex;flex-direction:column;gap:3px}
+.t-conf-group .t-label{font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--green);font-weight:600;margin-bottom:2px}
+
+/* ===== BUSINESS MODE STYLES ===== */
+
+/* Business narration */
+.b-narration{padding:10px 12px;background:transparent;border-left:3px solid;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6;color:var(--text2)}
+.b-narration.orch{border-left-color:#6366F1}
+.b-narration.immig{border-left-color:#3B82F6}
+.b-narration.housing{border-left-color:#10B981}
+.b-narration.schools{border-left-color:#8B5CF6}
+.b-narration.finance{border-left-color:#F59E0B}
+.b-narration.logistics{border-left-color:#EF4444}
+.b-narration.wellbeing{border-left-color:#EC4899}
+
+/* Business action */
+.b-action{padding:8px 10px;background:rgba(59,130,246,.05);border-radius:8px;font-size:11px;display:flex;align-items:center;gap:8px;color:var(--text2)}
+.b-action .b-icon{font-size:14px;min-width:20px}
+.b-action .b-text{flex:1}
+.b-action .b-status{font-size:13px;margin-left:auto;flex-shrink:0}
+
+/* Business finding */
+.b-finding{padding:10px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px}
+.b-finding .b-title{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.b-finding .b-icon{font-size:14px}
+.b-finding .b-detail{font-size:11px;color:var(--text2);line-height:1.5}
+
+/* Business decision */
+.b-decision{padding:10px 12px;background:rgba(245,158,11,.06);border-left:3px solid var(--amber);border-radius:0 6px 6px 0;}
+.b-decision .b-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.b-decision .b-detail{font-size:11px;color:var(--text2);line-height:1.5}
+
+/* Business progress */
+.b-progress{padding:10px 12px;background:rgba(99,102,241,.06);border-radius:8px}
+.b-progress .b-label{display:flex;justify-content:space-between;font-size:10px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.b-progress .b-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.b-progress .b-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .8s ease}
+.b-progress.amber .b-fill{background:linear-gradient(90deg,var(--amber),var(--amber))}
+
+/* Business handoff */
+.b-handoff{padding:8px 10px;background:rgba(16,185,129,.05);border-radius:8px;font-size:11px;display:flex;align-items:center;gap:6px;color:var(--text2)}
+.b-handoff .b-from{color:var(--green);font-weight:600}
+.b-handoff .b-arrow{opacity:.5;font-size:12px}
+.b-handoff .b-to{color:var(--green);font-weight:600}
+.b-handoff .b-what{color:var(--text2);margin-left:auto}
+
+/* Progress bar at bottom */
+.progress-bar{padding:10px 16px;border-top:1px solid var(--border);background:var(--bg)}
+.progress-track{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:2px;transition:width .6s ease;width:0%}
+.progress-text{display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-top:5px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Welcome */
+.welcome{position:absolute;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;transition:opacity .6s,visibility .6s}
+.welcome.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.welcome h1{font-size:32px;background:linear-gradient(135deg,var(--blue),var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}
+.welcome p{color:var(--text2);font-size:14px;max-width:500px;text-align:center;line-height:1.7}
+.start-btn{padding:12px 32px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--blue),var(--indigo));color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all .3s}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(59,130,246,.3)}
+
+/* Orch pipeline in agent panel header area */
+.orch-bar{padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg)}
+.orch-flow{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.orch-node{padding:3px 7px;border-radius:5px;font-size:8px;font-weight:500;border:1px solid var(--border);background:var(--bg2);color:var(--text3);transition:all .4s}
+.orch-node.active{border-color:var(--blue);color:var(--blue);background:rgba(59,130,246,.1)}
+.orch-node.done{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.08)}
+.orch-arrow{color:var(--text3);font-size:8px}
+
+/* ===== COLLABORATION VIEW ===== */
+.collab-dual-header{display:none;align-items:stretch;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,rgba(59,130,246,.04),rgba(139,92,246,.04),rgba(16,185,129,.04));position:sticky;top:0;z-index:2}
+.collab-dual-header.active{display:flex}
+.collab-agent{flex:1;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:9px;background:var(--bg);border:1px solid var(--border);min-width:0}
+.collab-agent.primary{border-color:rgba(59,130,246,.3);box-shadow:0 0 0 1px rgba(59,130,246,.15)}
+.collab-agent .ca-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.collab-agent .ca-info{min-width:0;overflow:hidden}
+.collab-agent .ca-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.collab-agent .ca-role{font-size:8px;color:var(--text3);margin-top:1px;text-transform:uppercase;letter-spacing:.5px}
+.collab-link{display:flex;align-items:center;justify-content:center;width:24px;color:var(--purple);font-size:16px;animation:collabPulse 2s infinite}
+@keyframes collabPulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+
+/* Collaboration badge entry */
+.collab-badge-entry{padding:8px 12px;background:linear-gradient(90deg,rgba(59,130,246,.08),rgba(139,92,246,.08),rgba(16,185,129,.08));border:1px solid rgba(139,92,246,.2);border-radius:8px;text-align:center;font-size:10px;color:var(--purple);font-weight:600;text-transform:uppercase;letter-spacing:1.2px}
+.collab-end-entry{padding:6px;text-align:center;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;opacity:.7}
+
+/* Inter-agent message */
+.t-collabmsg{padding:9px 11px;border-radius:9px;background:rgba(139,92,246,.04);border:1px solid rgba(139,92,246,.15)}
+.t-collabmsg .cm-head{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:10px;font-weight:600}
+.t-collabmsg .cm-from,.t-collabmsg .cm-to{display:flex;align-items:center;gap:4px}
+.t-collabmsg .cm-arrow{color:var(--purple);font-size:13px;font-weight:700;margin:0 2px}
+.t-collabmsg .cm-content{font-size:10px;color:var(--text2);line-height:1.55;padding:6px 8px;background:rgba(0,0,0,.12);border-radius:6px}
+.t-collabmsg.biz .cm-content{font-size:11px;line-height:1.55}
+
+@media(max-width:1100px){.agent-panel{width:400px}}
+</style>
+</head>
+<body data-view-mode="biz">
+<div class="app">
+<div class="welcome" id="welcome">
+  <div style="font-size:44px;margin-bottom:6px">🤖</div>
+  <h1>Agentic AI Relocation Assistant</h1>
+  <p>Watch how a multi-agent system works behind the scenes. The <strong>left panel</strong> shows the user experience. The <strong>right panel</strong> reveals every thought, tool call, document extraction, and decision — one agent at a time.</p>
+  <button class="start-btn" onclick="startDemo()">Launch Demo →</button>
+  <div style="font-size:11px;color:var(--text3);margin-top:6px">Click "Next Step" to advance · Click completed agents to review their trace</div>
+</div>
+
+<div class="chat-panel">
+  <div class="topbar">
+    <div class="logo">🤖</div>
+    <div><h2>Relocation Assistant</h2><div style="font-size:10px;color:var(--text3);margin-top:1px">Powered by 7 specialized agents</div></div>
+    <div class="tag" style="margin-left:auto">Multi-Agent</div>
+  </div>
+  <div class="chat-area" id="chat"></div>
+  <div class="input-area">
+    <input class="input-box" id="inputBox" placeholder="Type a message..." disabled>
+    <button class="ctrl-btn primary" id="nextBtn" onclick="nextStep()" disabled>Next Step <span style="font-size:14px">→</span></button>
+  </div>
+</div>
+
+<div class="agent-panel">
+  <div class="agent-header">
+    <div style="display:flex;align-items:center;gap:8px;flex:1">
+      <div class="live"></div>
+      <h3>Agent Orchestration</h3>
+    </div>
+    <div class="view-toggle">
+      <button class="toggle-btn active" data-mode="biz" onclick="setViewMode('biz')">Business</button>
+      <button class="toggle-btn" data-mode="tech" onclick="setViewMode('tech')">Technical</button>
+    </div>
+    <div style="margin-left:auto;font-size:9px;color:var(--text3)" id="stepLabel">Waiting...</div>
+  </div>
+  <div class="orch-bar">
+    <div class="orch-flow" id="orchFlow">
+      <div class="orch-node" data-o="intake">Intake</div><span class="orch-arrow">→</span>
+      <div class="orch-node" data-o="immigration">Immigration</div><span class="orch-arrow">→</span>
+      <div class="orch-node" data-o="housing">Housing</div><span class="orch-arrow">→</span>
+      <div class="orch-node" data-o="schools">Schools</div><span class="orch-arrow">→</span>
+      <div class="orch-node" data-o="finance">Finance</div><span class="orch-arrow">→</span>
+      <div class="orch-node" data-o="logistics">Logistics</div><span class="orch-arrow">→</span>
+      <div class="orch-node" data-o="summary">Summary</div>
+    </div>
+  </div>
+  <div class="done-strip" id="doneStrip"></div>
+
+  <!-- Active agent view -->
+  <div class="active-agent" id="activeAgent">
+    <div class="aa-header" id="aaHeader" style="display:none">
+      <div class="aa-icon" id="aaIcon"></div>
+      <div><div class="aa-name" id="aaName"></div><div class="aa-role" id="aaRole"></div></div>
+      <div class="a-status" id="aaStatus">Idle</div>
+    </div>
+    <div class="collab-dual-header" id="dualHeader">
+      <div class="collab-agent primary" id="collabA"><div class="ca-icon"></div><div class="ca-info"><div class="ca-name"></div><div class="ca-role">Primary</div></div></div>
+      <div class="collab-link">⇄</div>
+      <div class="collab-agent" id="collabB"><div class="ca-icon"></div><div class="ca-info"><div class="ca-name"></div><div class="ca-role">Consulting</div></div></div>
+    </div>
+    <div class="trace-log" id="traceLog">
+      <div class="trace-empty" id="traceEmpty">
+        <div class="te-icon">🎯</div>
+        <div class="te-text">Click <strong>Next Step</strong> to begin.<br>Agent activity will appear here in real time.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review panel for completed agents -->
+  <div class="review-panel" id="reviewPanel">
+    <div class="review-header">
+      <button class="back-btn" onclick="closeReview()">← Back to live</button>
+      <div class="aa-icon" id="revIcon" style="width:24px;height:24px;border-radius:7px;font-size:13px;display:flex;align-items:center;justify-content:center"></div>
+      <div style="font-size:12px;font-weight:600" id="revName"></div>
+      <div class="a-status done" style="margin-left:auto">Done</div>
+    </div>
+    <div class="review-scroll" id="reviewScroll"></div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+    <div class="progress-text"><span id="progLabel">Step 0 of 10</span><span id="progPct">0%</span></div>
+  </div>
+</div>
+</div>
+
+<script>
+const AGENTS={
+  orchestrator:{icon:'🎯',name:'Orchestrator',color:'#6366F1',role:'Routes requests, builds execution DAG'},
+  immigration:{icon:'🛂',name:'Immigration Agent',color:'#3B82F6',role:'Visa routes, eligibility scoring, document prep'},
+  housing:{icon:'🏠',name:'Housing Agent',color:'#10B981',role:'Property search, catchment analysis, safety scoring'},
+  schools:{icon:'🏫',name:'Schools Agent',color:'#8B5CF6',role:'Ofsted data, admissions, international support'},
+  finance:{icon:'💰',name:'Finance Agent',color:'#F59E0B',role:'Tax analysis, budgets, cross-border planning'},
+  logistics:{icon:'📦',name:'Logistics Agent',color:'#EF4444',role:'Moving quotes, flights, timeline coordination'},
+  wellbeing:{icon:'👨‍👩‍👧‍👦',name:'Wellbeing Agent',color:'#EC4899',role:'Family stress assessment, support resources'}
+};
+
+let step=0,maxStep=10,T=[],completedAgents={},currentAgent=null,reviewing=false;
+const $=id=>document.getElementById(id);
+const chat=$('chat'),traceLog=$('traceLog');
+
+function d(fn,ms){const t=setTimeout(fn,ms);T.push(t);}
+
+// ---- View mode toggle ----
+function setViewMode(mode){
+  document.body.dataset.viewMode=mode;
+  document.querySelectorAll('.toggle-btn').forEach(b=>{
+    b.classList.remove('active');
+    if(b.dataset.mode===mode)b.classList.add('active');
+  });
+}
+
+// ---- Agent panel control ----
+function showAgent(id,status,statusLabel){
+  if($('traceEmpty'))$('traceEmpty').remove();
+  const a=AGENTS[id];
+  currentAgent=id;
+  $('dualHeader').classList.remove('active');
+  $('aaHeader').style.display='flex';
+  $('aaIcon').style.background=a.color+'22';
+  $('aaIcon').style.color=a.color;
+  $('aaIcon').textContent=a.icon;
+  $('aaName').textContent=a.name;
+  $('aaRole').textContent=a.role;
+  setStatus(status,statusLabel);
+  traceLog.innerHTML='';
+  if(reviewing)closeReview();
+}
+function setStatus(status,label){
+  const s=$('aaStatus');
+  s.className='a-status '+status;
+  s.textContent=label||status;
+}
+function completeAgent(id){
+  const a=AGENTS[id];
+  completedAgents[id]=traceLog.innerHTML;
+  const chip=document.createElement('div');
+  chip.className='done-chip';
+  chip.id='dc-'+id;
+  chip.innerHTML=`<span class="dc-icon">${a.icon}</span>${a.name}<span class="dc-check">✓</span>`;
+  chip.onclick=()=>openReview(id);
+  $('doneStrip').appendChild(chip);
+  setStatus('done','Done');
+}
+function openReview(id){
+  const a=AGENTS[id];
+  reviewing=true;
+  $('activeAgent').style.display='none';
+  $('reviewPanel').classList.add('visible');
+  $('revIcon').style.background=a.color+'22';
+  $('revIcon').style.color=a.color;
+  $('revIcon').textContent=a.icon;
+  $('revName').textContent=a.name;
+  $('reviewScroll').innerHTML=completedAgents[id]||'';
+  document.querySelectorAll('.done-chip').forEach(c=>c.classList.remove('reviewing'));
+  const dc=$('dc-'+id);if(dc)dc.classList.add('reviewing');
+}
+function closeReview(){
+  reviewing=false;
+  $('reviewPanel').classList.remove('visible');
+  $('activeAgent').style.display='flex';
+  document.querySelectorAll('.done-chip').forEach(c=>c.classList.remove('reviewing'));
+}
+
+// ---- Trace entry helpers ----
+let entryCount=0;
+function addTrace(html){
+  const div=document.createElement('div');
+  div.className='trace-entry';
+  div.innerHTML=html;
+  div.style.animationDelay=(entryCount*0)+'ms';
+  traceLog.appendChild(div);
+  div.offsetHeight;
+  div.style.opacity='1';div.style.transform='translateY(0)';
+  traceLog.scrollTop=traceLog.scrollHeight;
+  entryCount++;
+}
+function resetEntryCount(){entryCount=0;}
+
+// ---- Technical mode helpers ----
+function tSysPrompt(role,code){
+  addTrace(`<div class="t-sysprompt" data-mode="tech"><div class="t-label">📜 System Prompt — ${role}</div><code>${code}</code></div>`);
+}
+function tThought(label,text){
+  addTrace(`<div class="t-thought" data-mode="tech"><span class="t-label">${label}</span>${text}</div>`);
+}
+function tTool(icon,name,params,result,status){
+  const sc=status==='✓'?'ok':status==='⚠️'?'warn':'loading';
+  addTrace(`<div class="t-tool" data-mode="tech"><div class="t-head"><span class="t-icon">${icon}</span><span class="t-name">${name}</span><span class="t-status ${sc}">${status}</span></div>${params?`<div class="t-params">${params}</div>`:''}${result?`<div class="t-result">${result}</div>`:''}</div>`);
+}
+function tExtract(doc,fields){
+  const rows=fields.map(f=>`<div class="t-field"><span class="t-key">${f[0]}</span><span class="t-val">${f[1]}</span><span class="t-conf ${f[2]}">${f[3]}</span></div>`).join('');
+  addTrace(`<div class="t-extract" data-mode="tech"><div class="t-label">📄 ${doc}</div>${rows}</div>`);
+}
+function tGuard(rules){
+  const rows=rules.map(r=>`<div class="t-rule"><span class="t-ricon">${r[0]}</span><span>${r[1]}</span><span class="t-rresult" style="color:${r[3]}">${r[2]}</span></div>`).join('');
+  addTrace(`<div class="t-guard" data-mode="tech"><div class="t-label">🛡️ Guardrail Check</div>${rows}</div>`);
+}
+function tEscalation(reason,detail,rule){
+  addTrace(`<div class="t-escalation" data-mode="tech"><div class="t-label">🚨 Human-in-the-Loop Required</div><div class="t-reason">${reason}</div><div class="t-rule-detail">Rule: ${rule}<br>${detail}</div></div>`);
+}
+function tMemory(label,text){
+  addTrace(`<div class="t-memory" data-mode="tech"><span class="t-label">${label}</span>${text}</div>`);
+}
+function tConfGroup(items){
+  const bars=items.map(i=>`<div class="t-conf-bar"><span class="tcb-label">${i[0]}</span><div class="tcb-track"><div class="tcb-fill" style="width:${i[1]}%;background:${i[2]}"></div></div><span class="tcb-val" style="color:${i[2]}">${i[1]}%</span></div>`).join('');
+  addTrace(`<div class="t-conf-group" data-mode="tech"><span class="t-label">📊 Confidence Scores</span>${bars}</div>`);
+}
+function tFlow(from,to,what){
+  addTrace(`<div class="t-flow" data-mode="tech"><span class="tf-from">${from}</span><span class="tf-arrow">→</span><span class="tf-to">${to}</span><span class="tf-what">| ${what}</span></div>`);
+}
+
+// ---- Business mode helpers ----
+function bNarration(text,agent){
+  const agentClass=agent||'orch';
+  addTrace(`<div class="b-narration ${agentClass}" data-mode="biz">${text}</div>`);
+}
+function bAction(icon,text,status){
+  const statusIcon=status==='⚠️'?'⚠️':status==='✓'?'✓':'⏳';
+  addTrace(`<div class="b-action" data-mode="biz"><span class="b-icon">${icon}</span><span class="b-text">${text}</span><span class="b-status">${statusIcon}</span></div>`);
+}
+function bFinding(icon,title,detail){
+  addTrace(`<div class="b-finding" data-mode="biz"><div class="b-title"><span class="b-icon">${icon}</span>${title}</div><div class="b-detail">${detail}</div></div>`);
+}
+function bDecision(title,detail){
+  addTrace(`<div class="b-decision" data-mode="biz"><div class="b-title">${title}</div><div class="b-detail">${detail}</div></div>`);
+}
+function bProgress(label,done,total){
+  const pct=Math.round((done/total)*100);
+  addTrace(`<div class="b-progress" data-mode="biz"><div class="b-label"><span>${label}</span><span>${done}/${total}</span></div><div class="b-bar"><div class="b-fill" style="width:${pct}%"></div></div></div>`);
+}
+function bHandoff(from,to,what){
+  addTrace(`<div class="b-handoff" data-mode="biz"><span class="b-from">${from}</span><span class="b-arrow">→</span><span class="b-to">${to}</span><span class="b-what">${what}</span></div>`);
+}
+
+// ---- Collaboration helpers ----
+function startCollab(partnerId){
+  const partner=AGENTS[partnerId];
+  const primary=AGENTS[currentAgent];
+  $('aaHeader').style.display='none';
+  const dh=$('dualHeader');
+  dh.classList.add('active');
+  const a=dh.querySelector('#collabA');
+  a.querySelector('.ca-icon').style.background=primary.color+'22';
+  a.querySelector('.ca-icon').style.color=primary.color;
+  a.querySelector('.ca-icon').textContent=primary.icon;
+  a.querySelector('.ca-name').textContent=primary.name;
+  const b=dh.querySelector('#collabB');
+  b.querySelector('.ca-icon').style.background=partner.color+'22';
+  b.querySelector('.ca-icon').style.color=partner.color;
+  b.querySelector('.ca-icon').textContent=partner.icon;
+  b.querySelector('.ca-name').textContent=partner.name;
+  addTrace(`<div class="collab-badge-entry">⚡ Agents Collaborating — ${primary.name.replace(' Agent','')} ⇄ ${partner.name.replace(' Agent','')}</div>`);
+}
+function endCollab(){
+  $('dualHeader').classList.remove('active');
+  $('aaHeader').style.display='flex';
+  addTrace(`<div class="collab-end-entry">⎯ collaboration complete ⎯</div>`);
+}
+function tCollabMsg(fromId,toId,content){
+  const af=AGENTS[fromId],at=AGENTS[toId];
+  addTrace(`<div class="t-collabmsg" data-mode="tech"><div class="cm-head"><span class="cm-from" style="color:${af.color}">${af.icon} ${af.name.replace(' Agent','')}</span><span class="cm-arrow">→</span><span class="cm-to" style="color:${at.color}">${at.icon} ${at.name.replace(' Agent','')}</span></div><div class="cm-content mono">${content}</div></div>`);
+}
+function bCollabMsg(fromId,toId,content){
+  const af=AGENTS[fromId],at=AGENTS[toId];
+  addTrace(`<div class="t-collabmsg biz" data-mode="biz"><div class="cm-head"><span class="cm-from" style="color:${af.color}">${af.icon} ${af.name.replace(' Agent','')}</span><span class="cm-arrow">→</span><span class="cm-to" style="color:${at.color}">${at.icon} ${at.name.replace(' Agent','')}</span></div><div class="cm-content">${content}</div></div>`);
+}
+
+// ---- Chat helpers ----
+function addMsg(type,text){const div=document.createElement('div');div.className='msg '+type;div.innerHTML=`<div class="avatar">${type==='user'?'👤':'🤖'}</div><div class="bubble">${text}</div>`;chat.appendChild(div);chat.scrollTop=chat.scrollHeight;}
+function addGenUI(html){const div=document.createElement('div');div.className='gen-ui';div.innerHTML=html;chat.appendChild(div);chat.scrollTop=chat.scrollHeight;}
+function showTyping(){const div=document.createElement('div');div.className='msg ai';div.id='typing-ind';div.innerHTML=`<div class="avatar">🤖</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;chat.appendChild(div);chat.scrollTop=chat.scrollHeight;}
+function hideTyping(){const el=$('typing-ind');if(el)el.remove();}
+function setOrch(n,s){document.querySelectorAll('.orch-node').forEach(x=>{if(x.dataset.o===n)x.className='orch-node '+s;});}
+function updateProg(){const p=Math.round((step/maxStep)*100);$('progFill').style.width=p+'%';$('progLabel').textContent=`Step ${step} of ${maxStep}`;$('progPct').textContent=p+'%';}
+function enableNext(){$('nextBtn').disabled=false;}
+function disableNext(){$('nextBtn').disabled=true;}
+
+// ===== STEPS =====
+const steps=[
+
+// Step 1: Orchestrator
+async function(){
+  $('stepLabel').textContent='Orchestrator';
+  resetEntryCount();
+  showAgent('orchestrator','running','Parsing...');
+  setOrch('intake','active');
+  addMsg('user',`We need to relocate our family from NYC to London for my new role as VP of Engineering at a fintech startup. My wife and two kids (ages 8 and 12) are coming. Settled by September. Budget ~£5,000/mo for housing.`);
+  showTyping();
+
+  d(()=>tSysPrompt('Orchestrator',`role: orchestrator
+goal: Parse intent, build execution DAG, route
+max_parallel_agents: 3
+escalation: route_ambiguity > 0.3
+temperature: 0.1`),300);
+
+  d(()=>bNarration('Reading your request and identifying what needs to happen...','orch'),350);
+
+  d(()=>tThought('🧠 Reasoning','Parsing natural language. Identifying: origin, destination, family composition, job role, employer type, timeline, budget.'),800);
+
+  d(()=>bAction('📋','Understood: Family of 4 moving NYC → London by September','✓'),850);
+
+  d(()=>tTool('📋','parse_intent()',`input: user_message
+extract: [origin, dest, family, role,
+  company_type, timeline, budget]`,`entities: 8 found
+origin: "NYC" | dest: "London"
+family: {adults:2, children:[8,12]}
+role: "VP Engineering" | sector: "fintech"
+timeline: "Sept 2026" | budget: "£5K/mo"`,'✓'),1400);
+
+  d(()=>bAction('🔍','Identified 8 key details from your message','✓'),1450);
+
+  d(()=>tExtract('User Message — NLP Parse',[['Origin','New York City, USA','high','99%'],['Destination','London, UK','high','99%'],['Family size','4 (2 adults, 2 kids)','high','98%'],['Child ages','8 and 12','high','97%'],['Job title','VP of Engineering','high','95%'],['Timeline','September 2026','high','94%'],['Housing budget','£5,000/month','high','96%']]),2000);
+
+  d(()=>{setStatus('running','Building DAG...');},2400);
+
+  d(()=>tThought('🔗 Dependency Analysis','Immigration is blocking — visa determines housing, schools, finances. Housing + Schools can run in parallel after.'),2600);
+
+  d(()=>bFinding('🗺️','Planning Route','Immigration must come first — it determines everything else. Housing and schools can run at the same time after.'),2650);
+
+  d(()=>tTool('🔀','build_execution_dag()',`nodes: [immigration, housing, schools,
+  finance, logistics, wellbeing]
+edges: immigration → housing
+  immigration → schools
+  housing → finance
+  finance → logistics`,`DAG valid ✓ | critical_path: immigration
+parallel: [housing, schools]
+est. duration: 14 weeks`,'✓'),3200);
+
+  d(()=>bProgress('Request analysis',4,4),3250);
+
+  d(()=>tGuard([['✅','Well-formed request','PASS','var(--green)'],['✅','No prohibited content','PASS','var(--green)'],['✅','Within agent capabilities','PASS','var(--green)'],['⚠️','Budget feasibility (£5K in London)','TIGHT','var(--amber)']]),3800);
+
+  d(()=>tConfGroup([['Intent clarity',96,'var(--green)'],['Route confidence',92,'var(--green)'],['Timeline feasibility',78,'var(--amber)']]),4200);
+
+  d(()=>bNarration('Built a plan. Handing off to the Immigration Agent first...','orch'),4250);
+
+  d(()=>{
+    setStatus('done','Routed');setOrch('intake','done');completeAgent('orchestrator');
+    hideTyping();
+    addMsg('ai','I\'d love to help with your family\'s relocation! I\'m coordinating 7 specialized agents. Here\'s the plan:');
+    addGenUI(`<div class="gen-card"><h4><span class="icon">📋</span> Relocation Plan</h4><div style="display:flex;flex-direction:column;gap:5px">${['🛂 Immigration — Critical path (first)','🏠 Housing — Parallel track A','🏫 Schools — Parallel track B','💰 Finance — After housing decision','📦 Logistics — After visa approval','👨‍👩‍👧‍👦 Wellbeing — Continuous'].map((t,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border-radius:8px;font-size:11px"><span style="color:var(--text3);font-size:9px;font-weight:600;width:16px">${i+1}</span>${t}</div>`).join('')}</div></div>`);
+    enableNext();
+  },4800);
+},
+
+// Step 2: Immigration — clarification
+async function(){
+  $('stepLabel').textContent='Immigration';
+  resetEntryCount();
+  showAgent('immigration','thinking','Loading...');
+  setOrch('immigration','active');
+
+  d(()=>tSysPrompt('Immigration Specialist',`role: immigration_specialist
+goal: Determine optimal visa route
+jurisdiction:
+  - UK Skilled Worker (Appendix SW)
+  - Dependent visas (partner + children)
+behavior:
+  - Check sponsor licence register
+  - Cross-ref SOC code with going rate
+  - Flag refusal risk factors
+escalation_policy:
+  - cost > £500 → human approval
+  - legal_submission → human approval
+  - refusal_risk > 0.3 → human review
+temperature: 0.1`),300);
+
+  d(()=>bNarration('Loading immigration expertise — UK visa rules, points system, sponsor requirements...','immig'),350);
+
+  d(()=>{setStatus('running','Analyzing...');},600);
+
+  d(()=>tThought('🧠 Initial Assessment','VP of Engineering at fintech → Skilled Worker visa (most likely). Should also evaluate Global Talent (Tech Nation) as backup — more flexibility, no sponsor dependency.'),900);
+
+  d(()=>bAction('🔍','Checking which visa routes you qualify for','✓'),950);
+
+  d(()=>tTool('🔍','query_visa_routes()',`nationality: "US"
+role: "VP Engineering"
+family: true`,`eligible_routes:
+  Skilled Worker (prob: 0.92) ← best
+  Global Talent (prob: 0.35)
+  Innovator Founder (prob: 0.08)`,'✓'),1500);
+
+  d(()=>bAction('📊','Found your job code: IT Specialist Manager (SOC 2133)','✓'),1550);
+
+  d(()=>tTool('📊','lookup_soc_code()',`job_title: "VP of Engineering"
+sector: "fintech"`,`soc: "2133" — IT specialist managers
+going_rate: £48,500/year
+eligible: true | shortage_list: false`,'✓'),2100);
+
+  d(()=>tThought('🔍 Missing Information','3 critical fields missing: (1) exact salary — must meet £38,700 threshold AND £48,500 going rate; (2) sponsor licence — employer MUST hold one; (3) English proof — mandatory. Cannot score without these.'),2700);
+
+  d(()=>bFinding('❓','Missing Information','I need 3 things before I can score your eligibility: your exact salary, whether your employer has a sponsor licence, and proof of English.'),2750);
+
+  d(()=>tGuard([['✅','SOC code eligible','PASS','var(--green)'],['❓','Salary threshold','NEEDS DATA','var(--amber)'],['❓','Sponsor licence','NEEDS DATA','var(--amber)'],['❓','English proof','NEEDS DATA','var(--amber)']]),3300);
+
+  d(()=>bDecision('Asking you for details','Can\'t proceed without salary, sponsor status, and English qualification.'),3350);
+
+  d(()=>{
+    setStatus('waiting','Needs Input');
+    tThought('📤 Generating UI','3 required fields missing → generating clarification UI. Blocking until user responds.');
+  },3800);
+
+  d(()=>bNarration('Generating a form for you to fill in...','immig'),3850);
+
+  d(()=>{
+    showTyping();
+    d(()=>{
+      hideTyping();
+      addMsg('ai','The Immigration Agent needs a few critical details to score your visa eligibility:');
+      addGenUI(`<div class="gen-card"><h4><span class="icon">🛂</span> Visa Assessment — Required Information</h4><div style="margin-bottom:12px"><div style="font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">UK Salary (GBP)</div><div class="clarify-grid"><div class="clarify-opt" onclick="selOpt(this)"><span class="opt-icon">💷</span> £65,000 – £79,999</div><div class="clarify-opt selected" onclick="selOpt(this)"><span class="opt-icon">💷</span> £80,000 – £99,999</div><div class="clarify-opt" onclick="selOpt(this)"><span class="opt-icon">💷</span> £100,000+</div></div></div><div style="margin-bottom:12px"><div style="font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Employer sponsor licence?</div><div class="clarify-grid"><div class="clarify-opt selected" onclick="selOpt(this)"><span class="opt-icon">✅</span> Yes, confirmed</div><div class="clarify-opt" onclick="selOpt(this)"><span class="opt-icon">❓</span> Not sure</div><div class="clarify-opt" onclick="selOpt(this)"><span class="opt-icon">❌</span> No</div></div></div><div><div style="font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">English qualification</div><div class="clarify-grid"><div class="clarify-opt selected" onclick="selOpt(this)"><span class="opt-icon">🌍</span> Native speaker (US citizen)</div><div class="clarify-opt" onclick="selOpt(this)"><span class="opt-icon">📜</span> IELTS or equivalent</div></div></div></div>`);
+      enableNext();
+    },400);
+  },4200);
+},
+
+// Step 3: Immigration — scoring + escalation
+async function(){
+  $('stepLabel').textContent='Immigration — Scoring';
+  resetEntryCount();
+  showAgent('immigration','extracting','Extracting...');
+  addMsg('user','Salary is £85,000. Yes, sponsor licence confirmed. Native English speaker (US citizen).');
+  showTyping();
+
+  d(()=>bNarration('Got your answers. Extracting the key details...','immig'),300);
+
+  d(()=>tExtract('User Response — Field Extraction',[['Salary','£85,000 per annum','high','99%'],['Sponsor','Confirmed','high','97%'],['English','Native (US national)','high','99%'],['Nationality','US citizen','high','99%']]),400);
+
+  d(()=>bAction('📝','Extracted: Salary £85,000, Sponsor confirmed, Native English speaker','✓'),450);
+
+  d(()=>tMemory('📝 Context Updated','salary=£85,000 | sponsor=confirmed | english=native | nationality=US | soc=2133'),900);
+
+  d(()=>bAction('🔢','Running points calculation against UK immigration rules','✓'),950);
+
+  d(()=>{setStatus('running','Scoring...');},1100);
+
+  d(()=>tTool('🔢','score_points()',`salary: £85,000
+job_offer: true | sponsor: verified
+english: native | soc: "2133"`,`POINTS BREAKDOWN:
+  Approved sponsor:     20
+  Salary ≥ £38,700:     20
+  Salary ≥ going rate:  20
+  English B1+:          10
+  SOC 2133 eligible:    20
+  PhD relevant:          0
+  ─────────────────
+  TOTAL: 90 / 70 needed ✓`,'✓'),1600);
+
+  d(()=>tTool('📋','check_maintenance()',`persons: 4 | per_person: £1,270`,`required: £5,080 for 28 days
+note: A-rated sponsor can certify
+(reduces burden on applicant)`,'✓'),2200);
+
+  d(()=>tTool('👨‍👩‍👧‍👦','assess_dependents()',`spouse: wife | child1: age 8
+child2: age 12`,`Spouse → Dependent Partner ✓
+Child 1 → Dependent Child ✓
+Child 2 → Dependent Child ✓
+All automatic with Skilled Worker`,'✓'),2800);
+
+  d(()=>bAction('👨‍👩‍👧‍👦','Checking your family\'s eligibility — all 3 dependents qualify','✓'),2850);
+
+  d(()=>tTool('💰','calculate_fees()',`main: visa £719 + IHS £3,120
+dependents × 3: same each
+priority: £500/person (optional)`,`Standard total:  £15,356
+With priority:   £17,356
+Breakdown:
+  Main:  £3,839 | Spouse: £3,839
+  Kid 1: £3,839 | Kid 2:  £3,839`,'✓'),3400);
+
+  d(()=>bAction('💰','Calculating total fees — £15,356 for all 4 visas','✓'),3450);
+
+  d(()=>bFinding('✅','You qualify!','90 points out of 70 needed. Skilled Worker visa is the recommended route.'),3500);
+
+  d(()=>tGuard([['✅','Points ≥ 70','90pts — PASS','var(--green)'],['✅','Salary ≥ going rate','£85K > £48.5K','var(--green)'],['✅','English met','Native — PASS','var(--green)'],['✅','Dependents eligible','3/3 qualify','var(--green)'],['🚨','Cost £15,356','EXCEEDS £500 → ESCALATE','var(--red)']]),4000);
+
+  d(()=>bProgress('Eligibility checks',5,5),4050);
+
+  d(()=>tEscalation('Visa fees: £15,356 (+ optional £2K priority)','Family of 4 IHS + visa fees total £15,356. With priority processing: £17,356. Requires explicit user approval.','escalation_policy.cost > £500 | amount=£15,356 (30× threshold)'),4500);
+
+  d(()=>bDecision('Your approval needed','Total visa cost is £15,356. This is a significant expense — I need your go-ahead before proceeding. Also: priority processing costs £2K extra but saves 2 weeks.'),4550);
+
+  d(()=>tConfGroup([['Eligibility',96,'var(--green)'],['Approval odds',91,'var(--green)']]),5000);
+
+  d(()=>bHandoff('Immigration','Orchestrator','Visa route confirmed, passing to next agents'),5050);
+
+  d(()=>tFlow('Immigration','Orchestrator','visa=Skilled_Worker | pts=90 | cost=£15,356'),5400);
+
+  d(()=>{
+    setStatus('done','90pts ✓');setOrch('immigration','done');completeAgent('immigration');
+    hideTyping();
+    addMsg('ai','You qualify for the <strong>Skilled Worker visa</strong> with 90 points (need 70):');
+    addGenUI(`<div class="gen-card" style="border-color:rgba(59,130,246,.3)"><h4><span class="icon">✅</span> Visa Eligibility — Skilled Worker</h4><div style="display:flex;gap:12px;margin-bottom:14px"><div style="text-align:center;padding:14px;background:var(--bg2);border-radius:10px;flex:1"><div style="font-size:24px;font-weight:700;color:var(--green)">90</div><div style="font-size:9px;color:var(--text3)">Points (70 req)</div></div><div style="text-align:center;padding:14px;background:var(--bg2);border-radius:10px;flex:1"><div style="font-size:24px;font-weight:700;color:var(--blue)">4</div><div style="font-size:9px;color:var(--text3)">Visas</div></div><div style="text-align:center;padding:14px;background:var(--bg2);border-radius:10px;flex:1"><div style="font-size:24px;font-weight:700;color:var(--amber)">£15.4K</div><div style="font-size:9px;color:var(--text3)">Cost</div></div></div></div><div class="gen-card" style="border-color:rgba(245,158,11,.3)"><h4><span class="icon">⚠️</span> Decision — Priority Processing?</h4><div style="font-size:11px;color:var(--text2);margin-bottom:8px">Standard ~3 weeks vs Priority ~5 days (+£2K).</div><div style="display:flex;gap:6px"><div class="clarify-opt selected" onclick="selOpt(this)" style="flex:1;justify-content:center"><span class="opt-icon">⚡</span> Priority</div><div class="clarify-opt" onclick="selOpt(this)" style="flex:1;justify-content:center"><span class="opt-icon">⏳</span> Standard</div></div></div>`);
+    enableNext();
+  },5900);
+},
+
+// Step 4: Housing
+async function(){
+  $('stepLabel').textContent='Housing';
+  resetEntryCount();
+  addMsg('user','Priority processing. What about housing?');
+  showAgent('housing','thinking','Loading...');
+  setOrch('housing','active');
+
+  d(()=>bNarration('Loading housing expertise — London rental market, school catchments, safety data...','housing'),300);
+
+  d(()=>tSysPrompt('Housing Specialist',`role: housing_search
+goal: Find family housing in budget
+data_sources:
+  - Rightmove API, Zoopla API
+  - Ofsted catchment, TfL commute
+  - Crime stats API
+behavior:
+  - Cross-ref school quality within 1km
+  - Score neighborhood safety
+  - Include council tax in budget check
+escalation: rent > budget × 1.1`),300);
+
+  d(()=>{setStatus('running','Searching...');},600);
+
+  d(()=>bAction('🔍','Searching 147 London properties (3+ bed, £4-5.5K/mo)','✓'),650);
+
+  d(()=>tMemory('📥 From Orchestrator','family=4 | kids=[8,12] | budget=£5K/mo | visa=Skilled_Worker | likely_workplace=Shoreditch/City'),800);
+
+  d(()=>tThought('🧠 Search Strategy','Family needs: 3+ bed, garden preferred, safe area (>75 crime score), good schools within catchment, max 40min commute to fintech hubs. £5K/mo is mid-range for London family housing.'),1200);
+
+  d(()=>tTool('🔍','rightmove_search()',`beds: "3+" | price: "£4-5.5K/mo"
+zones: [1,2,3] | family: true`,`147 results → 38 after filters
+need school data to rank...`,'✓'),1800);
+
+  d(()=>bAction('📋','Found 38 candidate properties — now need school ratings','✓'),1850);
+
+  // ===== HOUSING ⇄ SCHOOLS COLLABORATION =====
+  d(()=>tThought('🤝 Multi-Agent','Schools Agent has Ofsted data I need. Initiating consult — faster than me re-indexing school data.'),2200);
+
+  d(()=>bNarration('Consulting the Schools Agent — it has the school ratings I need...','housing'),2250);
+
+  d(()=>{startCollab('schools');},2500);
+
+  d(()=>bCollabMsg('housing','schools','I have 38 candidate postcodes. Which ones have a Good or Outstanding primary school within 1.5km?'),2800);
+
+  d(()=>tCollabMsg('housing','schools','request: evaluate_catchment(postcodes=[38], level="primary", min_rating="Good", radius_km=1.5)'),2900);
+
+  d(()=>bAction('📖','Schools is looking up Ofsted data for all 38 areas','✓'),3300);
+
+  d(()=>tTool('📖','ofsted_lookup_bulk()',`postcodes: 38
+level: "primary" | radius: 1.5km`,`Scanned 84 primary schools
+Good+: 24 schools across 16 postcodes`,'✓'),3400);
+
+  d(()=>bCollabMsg('schools','housing','16 of your 38 postcodes qualify. Top clusters: Richmond, Islington, Hampstead, Greenwich.'),3900);
+
+  d(()=>tCollabMsg('schools','housing','response: {qualified:16, top_areas:["Richmond","Islington","Hampstead","Greenwich"]}'),4000);
+
+  d(()=>bCollabMsg('housing','schools','Great. But we also have a 12-year-old — need good secondary schools too. Filter those 16 further.'),4400);
+
+  d(()=>tCollabMsg('housing','schools','request: evaluate_catchment(postcodes=[16], level="secondary", min_rating="Good")'),4500);
+
+  d(()=>bAction('📖','Schools now checking secondary schools in those 16 areas','✓'),4900);
+
+  d(()=>tTool('📖','ofsted_lookup_bulk()',`postcodes: 16
+level: "secondary"`,`Scanned 42 secondary schools
+Full match (both levels): 7 postcodes`,'✓'),5000);
+
+  d(()=>bCollabMsg('schools','housing','7 postcodes have BOTH good primary AND secondary. Richmond(3), Islington(2), Hampstead(1), Greenwich(1).'),5500);
+
+  d(()=>tCollabMsg('schools','housing','response: {fully_qualified:7, distribution:{Richmond:3,Islington:2,Hampstead:1,Greenwich:1}}'),5600);
+
+  d(()=>bFinding('🤝','Narrowed 38 → 7 together','Housing & Schools collaborated to filter down using combined criteria. Neither could do this alone.'),6000);
+
+  d(()=>{endCollab();},6300);
+  // ===== END COLLABORATION =====
+
+  d(()=>bAction('🚇','Scoring commute times for the 7 qualified properties','✓'),6600);
+
+  d(()=>tTool('🚇','score_commute()',`properties: 7 | destinations: Shoreditch, Canary Wharf
+max: 45min`,`Richmond: 35-42min (District)
+Islington: 12-18min (Northern)
+Hampstead: 22-28min (Northern)
+Greenwich: 18-25min (DLR)`,'✓'),6700);
+
+  d(()=>bAction('🔒','Checking neighborhood safety scores','✓'),7100);
+
+  d(()=>tTool('🔒','crime_safety_score()',`areas: 4 shortlisted`,`Richmond: 92/100 (very safe)
+Hampstead: 89/100 (very safe)
+Greenwich: 84/100 (safe)
+Islington: 76/100 (some hotspots)`,'✓'),7200);
+
+  d(()=>bFinding('🏆','Top Pick: Richmond','Best schools (Outstanding primary), safest area (92/100), and just within your £5K budget at £4,800/mo.'),7700);
+
+  d(()=>bProgress('Property analysis',4,4),7750);
+
+  d(()=>tGuard([['✅','Richmond £4,800+£180ct','£4,980 < £5K ✓','var(--green)'],['⚠️','Islington £5,200+£160ct','£5,360 > £5K','var(--amber)'],['✅','All areas have Good schools','PASS','var(--green)'],['✅','All areas > 75 safety','PASS','var(--green)']]),8100);
+
+  d(()=>tThought('📊 Ranking','Weighted: Richmond #1 (schools+safety+budget), Islington #2 (commute), Hampstead #3 (value). Presenting top 4 to user.'),8500);
+
+  d(()=>bNarration('Here are 4 shortlisted properties for you to choose from...','housing'),8550);
+
+  d(()=>{
+    setStatus('waiting','Select Property');
+    showTyping();
+    d(()=>{
+      hideTyping();
+      addMsg('ai','Top properties scored by schools, safety, commute, and budget:');
+      addGenUI(`<div class="gen-card"><h4><span class="icon">🏠</span> Properties — Click to Select</h4><div class="house-grid"><div class="house-card" onclick="selHouse(this)"><div class="house-img" style="background:linear-gradient(135deg,#1a3a2a,#0d4a3a)"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;opacity:.4">🏡</div><div class="tag-price">£4,800</div></div><div class="house-info"><h5>Victorian Terrace, Richmond</h5><p>4-bed, garden, Richmond Park views</p><div class="specs">🛏4 · 🚇35m · 🔒92</div></div></div><div class="house-card selected" onclick="selHouse(this)"><div class="house-img" style="background:linear-gradient(135deg,#1a2a3a,#0d3a5a)"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;opacity:.4">🏢</div><div class="tag-price">£5,200</div></div><div class="house-info"><h5>Warehouse, Islington</h5><p>3-bed converted, roof terrace</p><div class="specs">🛏3 · 🚇15m · 🔒76</div></div></div><div class="house-card" onclick="selHouse(this)"><div class="house-img" style="background:linear-gradient(135deg,#2a1a3a,#3a0d4a)"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;opacity:.4">🏘</div><div class="tag-price">£4,500</div></div><div class="house-info"><h5>Semi-Detached, Hampstead</h5><p>3-bed near Heath, village feel</p><div class="specs">🛏3 · 🚇25m · 🔒89</div></div></div><div class="house-card" onclick="selHouse(this)"><div class="house-img" style="background:linear-gradient(135deg,#3a2a1a,#4a3a0d)"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;opacity:.4">🏠</div><div class="tag-price">£5,400</div></div><div class="house-info"><h5>Townhouse, Greenwich</h5><p>4-bed new build, river views</p><div class="specs">🛏4 · 🚇20m · 🔒84</div></div></div></div></div>`);
+      enableNext();
+    },300);
+  },8900);
+},
+
+// Step 5: Schools
+async function(){
+  $('stepLabel').textContent='Schools';
+  resetEntryCount();
+  showAgent('schools','thinking','Loading...');
+  setOrch('schools','active');completeAgent('housing');
+
+  d(()=>bNarration('Loading education expertise — Ofsted ratings, admissions data, international student support...','schools'),300);
+
+  d(()=>tSysPrompt('Education Specialist',`role: school_search
+goal: Match schools to shortlisted homes
+data: Ofsted API, admissions, intl stats
+behavior:
+  - Map UK year group from age
+  - Verify mid-year availability
+  - Prioritize intl transition support`),300);
+
+  d(()=>{setStatus('running','Querying...');},600);
+
+  d(()=>tMemory('📥 From Housing','areas: [Richmond, Islington, Hampstead, Greenwich] | child_ages: [8→Year4, 12→Year8]'),800);
+
+  d(()=>bAction('📊','Pulling school ratings near your shortlisted properties','✓'),850);
+
+  d(()=>tThought('🧠 Age Mapping','8 yrs → Year 4 (KS2 primary). 12 yrs → Year 8 (KS3 secondary). Need both school types near each property. Sept entry is standard intake.'),1200);
+
+  d(()=>tTool('📊','query_ofsted()',`areas: 4 | radius: 1.5km
+min_rating: "Good"`,`PRIMARY (Y4): Vineyard (Outstanding),
+  Tyndale (Good), New End (Good)
+SECONDARY (Y8): Christ's (Good),
+  Highbury Fields (Good), Tallis (Good)`,'✓'),1800);
+
+  d(()=>bAction('📋','Checking September places available for Year 4 and Year 8','✓'),1850);
+
+  d(()=>tTool('📋','check_admissions()',`year_groups: [4, 8]
+term: "Sept 2026"`,`All schools have places ✓
+Vineyard: 2 places | Christ's: 5 places
+Tyndale: 4 | Highbury: 3`,'✓'),2400);
+
+  d(()=>bFinding('📄','Reading Ofsted Report','The Vineyard Primary in Richmond: rated Outstanding across all categories. Has welcomed 12 international families this year.'),2450);
+
+  d(()=>tExtract('Ofsted Report — The Vineyard',[['Overall','Outstanding','high','100%'],['Education quality','Outstanding','high','100%'],['Behaviour','Outstanding','high','100%'],['Last inspected','March 2024','high','100%'],['Intl families','12 this year','high','95%']]),3000);
+
+  d(()=>bAction('🌍','Checking international student support programs','✓'),3050);
+
+  d(()=>tTool('🌍','intl_support_check()',`criteria: transition program,
+  buddy system, coordinator`,`Vineyard: Welcome Buddy ✓
+Christ's: Global Citizens club ✓
+Tyndale: 40+ nationalities, buddy ✓
+Highbury: Strong pastoral team ✓`,'✓'),3500);
+
+  d(()=>bProgress('School matching',4,4),3550);
+
+  d(()=>tConfGroup([['Richmond match',95,'var(--green)'],['Islington match',82,'var(--green)'],['Transition support',90,'var(--green)']]),4000);
+
+  d(()=>bHandoff('Schools','Orchestrator','Best match: Richmond area — Vineyard Primary + Christ\'s School'),4050);
+
+  d(()=>tFlow('Schools','Orchestrator','best=Richmond (Vineyard + Christ\'s) | all_have_places'),4300);
+
+  d(()=>{
+    setStatus('done','Matched');setOrch('schools','done');completeAgent('schools');
+    addMsg('ai','Schools matched to each area. Richmond is the clear winner:');
+    addGenUI(`<div class="gen-card"><h4><span class="icon">🏫</span> School Matches</h4><div style="font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Year 4 (age 8)</div><div class="school-card selected" onclick="selSchool(this)"><div class="school-badge" style="background:rgba(16,185,129,.12)">🎓</div><div><h5>The Vineyard — Richmond</h5><div class="rating">★★★★★ Outstanding</div><p>0.4km. Welcome Buddy program. 12 intl families.</p></div></div><div class="school-card" onclick="selSchool(this)"><div class="school-badge" style="background:rgba(59,130,246,.12)">🎓</div><div><h5>William Tyndale — Islington</h5><div class="rating">★★★★☆ Good</div><p>0.3km. 40+ nationalities. Creative arts focus.</p></div></div><div style="font-size:10px;color:var(--text3);margin:8px 0 6px;text-transform:uppercase;letter-spacing:1px">Year 8 (age 12)</div><div class="school-card selected" onclick="selSchool(this)"><div class="school-badge" style="background:rgba(139,92,246,.12)">🎓</div><div><h5>Christ's School — Richmond</h5><div class="rating">★★★★☆ Good</div><p>0.8km. STEM focus. Global Citizens club. Robotics team.</p></div></div><div class="school-card" onclick="selSchool(this)"><div class="school-badge" style="background:rgba(236,72,153,.12)">🎓</div><div><h5>Highbury Fields — Islington</h5><div class="rating">★★★★☆ Good</div><p>0.6km. Strong GCSEs. Excellent pastoral care.</p></div></div></div>`);
+    enableNext();
+  },4700);
+},
+
+// Step 6: Finance
+async function(){
+  $('stepLabel').textContent='Finance';
+  resetEntryCount();
+  showAgent('finance','thinking','Loading...');
+  setOrch('finance','active');
+
+  d(()=>bNarration('Loading financial expertise — UK tax rules, US expat obligations, cost of living data...','finance'),300);
+
+  d(()=>tSysPrompt('Financial Planner',`role: cross_border_finance
+goal: Full financial picture for move
+behavior:
+  - Always flag dual-tax (US citizen)
+  - Never give investment advice
+  - Escalate retirement decisions
+escalation:
+  - retirement_action → human
+  - amount > £10,000 → human review`),300);
+
+  d(()=>{setStatus('running','Calculating...');},600);
+
+  d(()=>tMemory('📥 All Agent Data','salary=£85K | visa=£17,356 | rent=£4,800(Richmond) | nationality=US(dual-tax)'),800);
+
+  d(()=>bAction('💷','Calculating UK take-home pay: £5,412/month after tax','✓'),850);
+
+  d(()=>tThought('🧠 Dual-Tax Alert','US citizens taxed on worldwide income regardless of residence. Must file both US (IRS Form 1040 + 2555) and UK (HMRC). US-UK treaty prevents double taxation but needs careful planning.'),1200);
+
+  d(()=>tTool('💷','hmrc_net_income()',`gross: £85,000 | code: "1257L"`,`Tax: £14,570 | NI: £5,486
+Net annual: £64,944
+Net monthly: £5,412`,'✓'),1800);
+
+  d(()=>bAction('🇺🇸','Checking US tax obligations — your salary is fully covered by the Foreign Earned Income Exclusion','✓'),1850);
+
+  d(()=>tTool('🇺🇸','irs_analysis()',`gross_usd: ~$107,000
+feie_limit: "$126,500"`,`FEIE covers full salary ✓
+($107K < $126.5K limit)
+Still required: Form 1040 + 2555,
+FBAR (FinCEN 114), Form 8938`,'✓'),2400);
+
+  d(()=>bAction('🏦','Analyzing your 401(k) options...','⚠️'),2450);
+
+  d(()=>tTool('🏦','retirement_analysis()',`type: "401(k)"
+status: "leaving US employer"`,`⚠️ REQUIRES HUMAN INPUT
+Options:
+  1. Leave in plan (simple)
+  2. Rollover to IRA (flexible)
+  3. UK SIPP transfer (complex)
+Cannot auto-decide per policy.`,'⚠️'),3000);
+
+  d(()=>bFinding('⚠️','Budget is tight','After rent (£4,800) and essentials, you\'ll have a shortfall. Consider negotiating a relocation package with your employer.'),3050);
+
+  d(()=>tGuard([['✅','Budget feasible','£5,412 net vs £4,800 rent','var(--green)'],['⚠️','Tight margin','Only £612/mo after rent','var(--amber)'],['✅','FEIE covers tax','$107K < limit','var(--green)'],['🚨','401(k) decision','MUST ESCALATE','var(--red)']]),3500);
+
+  d(()=>bDecision('Your decision needed','Your 401(k) retirement account needs a decision: leave it in the US, roll it over to an IRA, or transfer to a UK pension. Each has different tax implications — I can\'t make this call for you.'),3550);
+
+  d(()=>tEscalation('Retirement account decision','401(k) rollover is irreversible with significant tax consequences. Each option has different long-term implications.','escalation_policy.retirement_action → human_required'),4000);
+
+  d(()=>bNarration('Presenting your budget breakdown and 401(k) options...','finance'),4050);
+
+  d(()=>{
+    setStatus('waiting','401k Decision');
+    addMsg('ai','Financial picture built. Budget is tight but workable:');
+    addGenUI(`<div class="gen-card"><h4><span class="icon">💰</span> Monthly Budget</h4><div>${[['Net salary','£5,412','var(--green)'],['Rent','- £4,800','var(--blue)'],['Council tax','- £180','var(--amber)'],['Groceries','- £800','var(--purple)'],['Transport','- £300','var(--cyan)'],['Activities','- £500','var(--pink)'],['Shortfall','- £1,168','var(--red)']].map(([l,a,c])=>`<div class="budget-row"><span>${l}</span><span style="color:${c};font-family:'JetBrains Mono',monospace;font-size:11px">${a}</span></div>`).join('')}</div><div style="margin-top:8px;padding:8px;background:rgba(245,158,11,.06);border-radius:8px;font-size:10px;color:var(--text2)">💡 Negotiate employer relo package (typical £5-15K) or choose Hampstead (saves £300/mo)</div></div><div class="gen-card" style="border-color:rgba(245,158,11,.3)"><h4><span class="icon">⚠️</span> Decision — 401(k)</h4><div class="clarify-grid"><div class="clarify-opt" onclick="selOpt(this)"><span class="opt-icon">🏦</span> Leave in US plan</div><div class="clarify-opt selected" onclick="selOpt(this)"><span class="opt-icon">🔄</span> Rollover to IRA</div><div class="clarify-opt" onclick="selOpt(this)"><span class="opt-icon">🇬🇧</span> UK SIPP (complex)</div></div></div>`);
+    enableNext();
+  },4500);
+},
+
+// Step 7: Logistics
+async function(){
+  $('stepLabel').textContent='Logistics';
+  resetEntryCount();
+  showAgent('logistics','running','Planning...');
+  setOrch('logistics','active');completeAgent('finance');
+
+  d(()=>bNarration('Loading logistics expertise — international movers, flights, setup checklists...','logistics'),300);
+
+  d(()=>tSysPrompt('Logistics Coordinator',`role: relocation_logistics
+goal: Coordinate international move
+tools: mover_quotes, flights, checklist
+constraints:
+  - Align with visa timeline
+  - Sea freight = 4-6wk lead time`),300);
+
+  d(()=>tMemory('📥 Full Timeline','visa=July(priority) | lease=Aug | school=Sept5 | budget_tight'),600);
+
+  d(()=>bAction('📦','Getting moving quotes — Crown Relocations recommended at £8,500','✓'),650);
+
+  d(()=>tThought('⏰ Working Backwards','School Sept 5 → in home by Sept 1 → sea freight 4-6wk → must ship by July 15. Visa expected July with priority. Only 2 weeks between visa & shipping. Need air freight for essentials.'),1000);
+
+  d(()=>tTool('📦','mover_quotes()',`NYC → London | 3-4 bed volume`,`Crown: £8,500 (sea + air essentials)
+Santa Fe: £7,900 (sea only)
+Allied: £9,200 (full service)
+Recommend: Crown`,'✓'),1600);
+
+  d(()=>bAction('✈️','Found flights — BA direct Aug 15, £3,200 for the family','✓'),1650);
+
+  d(()=>tTool('✈️','search_flights()',`JFK→LHR | Aug 10-20 | family of 4`,`BA Aug 15: £3,200 (direct) ← best
+Virgin Aug 14: £2,900 (direct)
+United Aug 16: £3,400 (1 stop)`,'✓'),2200);
+
+  d(()=>bAction('📋','Built a 47-item relocation checklist','✓'),2250);
+
+  d(()=>tTool('📋','build_checklist()',`categories: 8`,`47 items generated
+Critical path: 12 items
+Deadline-sensitive: 8 items`,'✓'),2700);
+
+  d(()=>bFinding('⏰','Tight but doable','Working backwards from school starting Sept 5: you need to ship belongings by July 15, which is only 2 weeks after expected visa approval.'),2750);
+
+  d(()=>bProgress('Timeline planning',3,3),2800);
+
+  d(()=>tGuard([['✅','Timeline achievable','Tight but OK','var(--green)'],['⚠️','Ship by July 15','Tight with visa','var(--amber)'],['✅','Flights available','BA Aug 15 ✓','var(--green)']]),3200);
+
+  d(()=>bNarration('Presenting your complete timeline and relocation checklist...','logistics'),3250);
+
+  d(()=>{
+    setStatus('done','Planned');setOrch('logistics','done');completeAgent('logistics');
+    addMsg('ai','Complete timeline mapped:');
+    addGenUI(`<div class="gen-card"><h4><span class="icon">📅</span> Timeline</h4><div>${[{d:'May',t:'Submit Visas',p:'Priority processing. Biometrics in 5 days.',c:'var(--blue)'},{d:'June',t:'Sign Lease',p:'Richmond terrace. Deposit £9,600.',c:'var(--green)'},{d:'July',t:'Ship Belongings',p:'Crown Relocations. Sea + air essentials.',c:'var(--red)'},{d:'Aug 15',t:'Fly to London',p:'BA direct. Airbnb 2 weeks.',c:'var(--cyan)'},{d:'Aug 20-31',t:'UK Setup',p:'Bank, GP, utilities, Oyster cards.',c:'var(--amber)'},{d:'Sept 1',t:'Move In',p:'Sea freight arrives. Unpack.',c:'var(--green)'},{d:'Sept 5',t:'School Starts',p:'Buddy programs activated.',c:'var(--pink)'}].map(t=>`<div class="timeline-item"><div class="timeline-dot" style="background:${t.c}"></div><div><div style="font-size:9px;color:var(--text3)">${t.d}</div><h5>${t.t}</h5><p>${t.p}</p></div></div>`).join('')}</div></div>`);
+    enableNext();
+  },3600);
+},
+
+// Step 8: Wellbeing
+async function(){
+  $('stepLabel').textContent='Wellbeing';
+  resetEntryCount();
+  showAgent('wellbeing','running','Assessing...');
+
+  d(()=>bNarration('Proactively checking on your family\'s emotional readiness for this big move...','wellbeing'),300);
+
+  d(()=>tThought('💚 Proactive Check','Major family transition. Children uprooted, spouse career disruption. Running stress analysis + finding local support resources.'),400);
+
+  d(()=>bAction('💚','Assessing stress factors for each family member','✓'),450);
+
+  d(()=>tTool('💚','stress_analysis()',`family: 4 members`,`Child (8yr): HIGH (0.8)
+Child (12yr): VERY HIGH (0.9)
+Spouse career: HIGH (0.75)
+Cultural adjust: MEDIUM (0.5)
+Logistics: LOW (0.3) — well planned`,'✓'),1000);
+
+  d(()=>bAction('🏥','Finding local support resources in Richmond','✓'),1050);
+
+  d(()=>tTool('🏥','find_support()',`area: Richmond`,`Richmond American Society (expat)
+Common Ground coworking (5min)
+Saturday football (age 8-12)
+Youth robotics (Wed eves)
+Kids coding workshop (library, free)
+Dr. Sarah Chen, family therapist`,'✓'),1600);
+
+  d(()=>bFinding('🧑‍🎓','Highest concern: your 12-year-old','Leaving friends at this age is hardest. Good news: Christ\'s School has a Global Citizens club specifically for international students.'),1650);
+
+  d(()=>bProgress('Family readiness','72%'),1700);
+
+  d(()=>tConfGroup([['Family readiness',72,'var(--amber)'],['Support coverage',85,'var(--green)']]),2100);
+
+  d(()=>{
+    setStatus('done','OK');completeAgent('wellbeing');
+    addMsg('ai','Wellbeing Agent flagged proactive support:');
+    addGenUI(`<div class="gen-card" style="border-color:rgba(236,72,153,.2)"><h4><span class="icon">👨‍👩‍👧‍👦</span> Transition Support</h4><div style="display:flex;flex-direction:column;gap:6px">${[{i:'🧒',t:'8-year-old',d:'Welcome Buddy at Vineyard. Saturday football + coding workshops.'},{i:'🧑‍🎓',t:'12-year-old (highest risk)',d:'Global Citizens club. Youth robotics Wednesdays. Dedicated intl coordinator.'},{i:'👩',t:'Spouse',d:'Richmond American Society. Common Ground coworking. LinkedIn UK.'},{i:'👨',t:'You',d:'Start 2 weeks early if possible — overlap helps enormously.'}].map(t=>`<div style="padding:9px;background:var(--bg2);border-radius:8px"><div style="font-size:12px;font-weight:500;margin-bottom:2px">${t.i} ${t.t}</div><div style="font-size:10px;color:var(--text2);line-height:1.4">${t.d}</div></div>`).join('')}</div></div>`);
+    enableNext();
+  },2500);
+},
+
+// Step 9: Summary
+async function(){
+  $('stepLabel').textContent='Summary';
+  resetEntryCount();
+  showAgent('orchestrator','running','Compiling...');
+  setOrch('summary','active');
+
+  d(()=>bNarration('All agents have finished. Checking everything fits together...','orch'),300);
+
+  d(()=>tThought('📊 Final','All 6 agents complete. Validating DAG, compiling unified summary.'),300);
+
+  d(()=>bAction('✅','All 6 agents completed successfully','✓'),350);
+
+  d(()=>tTool('✅','validate_dag()',`check: all_complete`,`immigration ✓ | housing ✓
+schools ✓ | finance ✓
+logistics ✓ | wellbeing ✓
+─── All dependencies met ───
+Blockers: 0 | HITL resolved: 4`,'✓'),800);
+
+  d(()=>bAction('✅','No blockers — all dependencies satisfied','✓'),850);
+
+  d(()=>bFinding('🎯','Plan ready','4 decisions were made with your input. Total relocation cost: approximately £32,000.'),900);
+
+  d(()=>tFlow('All Agents','Summary','6/6 complete | 4 HITL decisions | 0 blockers'),1200);
+
+  d(()=>bNarration('Here\'s your complete plan for review...','orch'),1250);
+
+  d(()=>{
+    setStatus('done','Complete');setOrch('summary','done');
+    addMsg('ai','Complete relocation plan — all agents finished:');
+    addGenUI(`<div class="gen-card" style="border-color:rgba(99,102,241,.3);background:linear-gradient(135deg,var(--card),rgba(99,102,241,.05))"><h4><span class="icon">🎯</span> Summary — NYC → London</h4><div class="summary-grid" style="margin-bottom:12px"><div class="summary-item"><div class="label">Visa</div><div class="value" style="color:var(--blue)">Skilled Worker</div></div><div class="summary-item"><div class="label">Cost</div><div class="value" style="color:var(--amber)">£17,356</div></div><div class="summary-item"><div class="label">Home</div><div class="value" style="color:var(--green)">Richmond Terrace</div></div><div class="summary-item"><div class="label">Rent</div><div class="value" style="color:var(--green)">£4,800/mo</div></div><div class="summary-item"><div class="label">Primary</div><div class="value" style="color:var(--purple)">The Vineyard ★★★★★</div></div><div class="summary-item"><div class="label">Secondary</div><div class="value" style="color:var(--purple)">Christ's ★★★★</div></div><div class="summary-item"><div class="label">Move</div><div class="value" style="color:var(--cyan)">Aug 15, 2026</div></div><div class="summary-item"><div class="label">School</div><div class="value" style="color:var(--pink)">Sept 5, 2026</div></div></div><div style="padding:10px;background:var(--bg2);border-radius:8px;font-size:11px;color:var(--text2)"><strong>Total cost:</strong> ~£32K (visas + movers + flights + deposit)</div><div style="margin-top:8px;display:flex;gap:6px"><div class="clarify-opt" style="flex:1;justify-content:center;border-color:var(--green);color:var(--green)" onclick="this.classList.add('selected')">✅ Approve</div><div class="clarify-opt" style="flex:1;justify-content:center" onclick="this.classList.add('selected')">✏️ Modify</div><div class="clarify-opt" style="flex:1;justify-content:center" onclick="this.classList.add('selected')">📄 Export</div></div></div>`);
+    enableNext();
+  },1600);
+},
+
+// Step 10: Done
+async function(){
+  $('stepLabel').textContent='Complete ✓';
+  resetEntryCount();
+  addMsg('user','Approve! Set up reminders too.');
+  showTyping();showAgent('orchestrator','running','Finalizing...');
+
+  d(()=>bAction('📅','Created 8 calendar reminders','✓'),300);
+
+  d(()=>tTool('📅','schedule_reminders()',`milestones: 8`,`8 calendar reminders created
+May→Sept 2026`,'✓'),300);
+
+  d(()=>bAction('📄','Generated 14-page relocation PDF','✓'),700);
+
+  d(()=>tTool('📄','generate_pdf()',`pages: 14 | sections: 8`,`Relocation plan PDF generated
+14 pages, all contacts + checklists`,'✓'),700);
+
+  d(()=>bNarration('All done! Your agents will continue monitoring for changes.','orch'),750);
+
+  d(()=>{
+    setStatus('done','All Done');
+    hideTyping();
+    addMsg('ai','Plan approved! Reminders set, PDF generated. All agents will continue monitoring — changes trigger automatic alerts.<br><br>Welcome to London! 🇬🇧');
+    addGenUI(`<div class="gen-card" style="border-color:rgba(16,185,129,.3);background:linear-gradient(135deg,var(--card),rgba(16,185,129,.05))"><h4><span class="icon">✅</span> All Systems Go</h4><div style="display:flex;gap:8px;text-align:center"><div style="flex:1;padding:12px;background:var(--bg2);border-radius:10px"><div style="font-size:20px;font-weight:700">7</div><div style="font-size:9px;color:var(--text3)">Agents</div></div><div style="flex:1;padding:12px;background:var(--bg2);border-radius:10px"><div style="font-size:20px;font-weight:700">31</div><div style="font-size:9px;color:var(--text3)">Tool Calls</div></div><div style="flex:1;padding:12px;background:var(--bg2);border-radius:10px"><div style="font-size:20px;font-weight:700">4</div><div style="font-size:9px;color:var(--text3)">HITL</div></div><div style="flex:1;padding:12px;background:var(--bg2);border-radius:10px"><div style="font-size:20px;font-weight:700">47</div><div style="font-size:9px;color:var(--text3)">Tasks</div></div></div><div style="margin-top:10px;padding:10px;background:rgba(16,185,129,.08);border-radius:8px;font-size:11px;color:var(--green);text-align:center;font-weight:500">Relocation plan live — agents monitoring</div></div>`);
+    $('nextBtn').textContent='Restart ↻';$('nextBtn').onclick=()=>location.reload();enableNext();
+  },1100);
+}
+];
+
+// ---- Interaction handlers ----
+function selOpt(el){el.parentElement.querySelectorAll('.clarify-opt').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');}
+function selHouse(el){el.classList.toggle('selected');}
+function selSchool(el){el.classList.toggle('selected');}
+
+function startDemo(){$('welcome').classList.add('hidden');enableNext();}
+async function nextStep(){if(step>=steps.length)return;disableNext();step++;updateProg();await steps[step-1]();}
+</script>
+</body>
+</html>

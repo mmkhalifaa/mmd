@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic AI — From Chaos to Coordination</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0A1628;--bg2:#0F1D32;--card:#131F35;--blue:#3B82F6;--blue-g:rgba(59,130,246,.25);--blue-d:rgba(59,130,246,.12);--amber:#F59E0B;--amber-g:rgba(245,158,11,.25);--amber-d:rgba(245,158,11,.10);--green:#10B981;--green-g:rgba(16,185,129,.25);--red:#EF4444;--purple:#8B5CF6;--cyan:#06B6D4;--pink:#EC4899;--t1:#F1F5F9;--t2:#94A3B8;--t3:#475569;--border:rgba(59,130,246,.12)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--t1);font-family:'Inter',sans-serif}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;font-weight:600}
+#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
+#deck{position:relative;width:100%;height:100vh;z-index:1}
+.s{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 100px;opacity:0;transform:translateY(18px);transition:opacity .7s,transform .7s;pointer-events:none;overflow:hidden}
+.s.on{opacity:1;transform:none;pointer-events:auto}
+#nav{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:100;padding:6px 14px;background:rgba(10,22,40,.85);border-radius:24px;border:1px solid var(--border);backdrop-filter:blur(12px)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--t3);cursor:pointer;transition:.3s}
+.dot.on{background:var(--blue);box-shadow:0 0 10px var(--blue-g);transform:scale(1.3)}
+#counter{position:fixed;top:28px;right:40px;font-size:13px;color:var(--t3);z-index:100;font-weight:500}
+#mini{position:fixed;bottom:62px;right:24px;width:120px;height:120px;z-index:50;opacity:0;transition:opacity .6s;pointer-events:none}
+#mini.vis{opacity:1}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes glow{0%,100%{box-shadow:0 0 20px var(--blue-g)}50%{box-shadow:0 0 40px var(--blue-g),0 0 80px rgba(59,130,246,.08)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes dash{to{stroke-dashoffset:-20}}
+@keyframes blink{from,to{border-color:transparent}50%{border-color:var(--blue)}}
+
+/* ACT 1 */
+#a1 .hero-num{font-size:120px;font-weight:700;line-height:1;background:linear-gradient(135deg,var(--red),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;opacity:0}
+#a1 .hero-label{font-size:20px;color:var(--t2);margin-top:8px;opacity:0}
+.stat-row{display:flex;gap:48px;margin-top:50px}
+.stat-box{text-align:center;opacity:0;transform:translateY(20px);transition:.6s}
+.stat-box.on{opacity:1;transform:none}
+.stat-box .num{font-family:'Space Grotesk';font-size:52px;font-weight:700}
+.stat-box .lbl{font-size:14px;color:var(--t2);margin-top:4px;max-width:160px}
+#a1 .tagline{margin-top:48px;font-size:17px;color:var(--t3);font-style:italic;opacity:0;transition:opacity 1s}
+
+/* ACT 2 */
+.big-text{font-family:'Space Grotesk';font-size:44px;font-weight:300;text-align:center;line-height:1.5;max-width:880px;opacity:0}
+.big-text em{font-style:normal;color:var(--blue);font-weight:500}
+.wave-row{display:flex;gap:32px;margin-top:56px;opacity:0;transition:opacity .6s}
+.wave{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px 26px;width:270px;opacity:0;transform:translateY(16px);transition:.5s}
+.wave.on{opacity:1;transform:none}
+.wave.glow{border-color:var(--blue);box-shadow:0 0 30px var(--blue-g);animation:glow 3s infinite}
+.wave .era{font-size:12px;color:var(--t3);font-weight:500;margin-bottom:8px}
+.wave h3{font-size:22px;margin-bottom:10px}
+.wave p{font-size:14px;color:var(--t2);line-height:1.6}
+#punchline{margin-top:48px;font-family:'Space Grotesk';font-size:26px;font-weight:500;color:var(--blue);opacity:0;text-align:center;transition:opacity .8s}
+
+/* ACT 3 overview */
+.agents-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:100%;max-width:1100px;margin-top:36px}
+.ag-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;opacity:0;transform:translateY(16px);transition:.5s;cursor:default}
+.ag-card.on{opacity:1;transform:none}
+.ag-card:hover{border-color:var(--blue);box-shadow:0 0 16px var(--blue-g)}
+.ag-card .ag-icon{font-size:30px;margin-bottom:10px}
+.ag-card h4{font-size:15px;margin-bottom:6px}
+.ag-card p{font-size:12px;color:var(--t2);line-height:1.5}
+#a3 .subtitle{font-size:15px;color:var(--t2);max-width:700px;text-align:center;margin-top:24px;opacity:0;transition:opacity .8s}
+
+/* BUILDER (acts 4-10) */
+.builder{flex-direction:row!important;gap:28px;padding:36px 48px!important}
+.bl{width:42%;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto}
+.br{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;max-height:84vh}
+.build-steps{display:flex;gap:0;margin-bottom:14px;flex-shrink:0}
+.bstep{flex:1;text-align:center;padding:8px 4px;font-size:10px;font-weight:600;color:var(--t3);border-bottom:2px solid var(--border);transition:.4s}
+.bstep.active{color:var(--blue);border-color:var(--blue)}
+.bstep.done{color:var(--green);border-color:var(--green)}
+.bstep .bnum{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--t3);font-size:9px;margin-right:3px;transition:.3s}
+.bstep.active .bnum{border-color:var(--blue);background:var(--blue-d);color:var(--blue)}
+.bstep.done .bnum{border-color:var(--green);background:rgba(16,185,129,.15);color:var(--green)}
+.bp{display:none;opacity:0;transition:opacity .4s;flex:1;overflow-y:auto}
+.bp.active{display:flex;flex-direction:column;opacity:1}
+.bp-title{font-size:16px;margin-bottom:4px}
+.bp-desc{font-size:12px;color:var(--t2);margin-bottom:12px;line-height:1.5}
+.code-editor{background:#0D1117;border:1px solid #21262D;border-radius:10px;overflow:hidden;flex-shrink:0}
+.ce-hdr{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid #21262D;background:#161B22}
+.ce-dot{width:8px;height:8px;border-radius:50%}
+.ce-file{font-size:10px;color:var(--t3);margin-left:6px}
+.ce-body{padding:12px;font-family:'Courier New',monospace;font-size:11px;line-height:1.7;color:#C9D1D9;min-height:120px;white-space:pre-wrap}
+.ce-body .kw{color:#FF7B72}.ce-body .str{color:#A5D6FF}.ce-body .cmt{color:#8B949E}
+.tool-toggles{display:flex;flex-direction:column;gap:6px}
+.tool-toggle{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:.3s;user-select:none}
+.tool-toggle:hover{border-color:var(--blue)}
+.tool-toggle.connected{border-color:var(--green);box-shadow:0 0 8px rgba(16,185,129,.12)}
+.tt-icon{font-size:18px;width:28px;text-align:center}
+.tt-info{flex:1}
+.tt-name{font-size:12px;font-weight:600}
+.tt-desc{font-size:10px;color:var(--t3)}
+.tt-sw{width:36px;height:20px;border-radius:10px;background:var(--t3);position:relative;transition:.3s;flex-shrink:0}
+.tt-sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:white;transition:.3s}
+.tool-toggle.connected .tt-sw{background:var(--green)}
+.tool-toggle.connected .tt-sw::after{left:18px}
+.field-list{display:flex;flex-direction:column;gap:5px}
+.field-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:7px;font-size:11px;cursor:pointer;transition:.3s}
+.field-item.added{border-color:var(--green);background:rgba(16,185,129,.05)}
+.fi-name{font-weight:600;flex:1}.fi-type{color:var(--t3);font-size:10px}
+.fi-chk{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--t3);display:flex;align-items:center;justify-content:center;font-size:10px;transition:.3s;flex-shrink:0}
+.field-item.added .fi-chk{border-color:var(--green);background:var(--green);color:white}
+.rule-card{padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:.3s}
+.rule-card:hover{border-color:var(--amber)}
+.rule-card.enabled{border-color:var(--amber);background:var(--amber-d)}
+.rc-header{font-size:12px;font-weight:600}.rc-desc{font-size:10px;color:var(--t2);margin-top:3px;line-height:1.4}
+.nbtn{display:inline-flex;align-items:center;gap:5px;padding:9px 20px;border-radius:10px;background:var(--blue);color:white;font-weight:600;font-size:13px;border:none;cursor:pointer;margin-top:12px;font-family:'Space Grotesk';transition:.2s;flex-shrink:0}
+.nbtn:hover{box-shadow:0 0 16px var(--blue-g);transform:translateY(-1px)}
+.nbtn::after{content:'→';margin-left:4px}
+.nbtn.fin{background:var(--green)}.nbtn.fin::after{content:'✓'}
+.nbtn.off{opacity:.3;pointer-events:none}
+.test-btn{display:inline-flex;align-items:center;gap:5px;padding:9px 20px;border-radius:10px;background:var(--blue);color:white;font-weight:600;font-size:13px;border:none;cursor:pointer;margin-top:8px;font-family:'Inter';transition:.2s}
+.test-btn:hover{box-shadow:0 0 16px var(--blue-g)}
+.test-btn.running{background:var(--amber);pointer-events:none}
+.pv-hdr{padding:10px 16px;border-bottom:1px solid var(--border);background:rgba(10,22,40,.5);font-size:11px;color:var(--t3);font-weight:500}
+.pv-body{padding:14px;flex:1;overflow-y:auto;font-size:12px;line-height:1.7}
+.pv-body::-webkit-scrollbar{width:4px}
+.pv-body::-webkit-scrollbar-thumb{background:var(--t3);border-radius:2px}
+.pv-sec{margin-bottom:12px}
+.pv-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);font-weight:600;margin-bottom:4px}
+.pv-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;margin:2px}
+.pv-pill.tool{background:var(--blue-d);color:var(--blue)}
+.pv-pill.field{background:rgba(139,92,246,.12);color:var(--purple)}
+.pv-pill.rule{background:var(--amber-d);color:var(--amber)}
+.sl{opacity:0;transform:translateY(5px);transition:.4s;margin-bottom:2px;padding:2px 0;font-family:'Courier New',monospace;font-size:11px}
+.sl.on{opacity:1;transform:none}
+.sl.think{color:var(--t3)}.sl.act{color:var(--blue)}.sl.res{color:var(--green)}.sl.alert{color:var(--amber)}
+.sl.human{color:var(--amber);background:var(--amber-d);padding:8px 10px;border-radius:6px;border-left:3px solid var(--amber);margin:6px 0;line-height:1.5}
+
+/* CONSTELLATION */
+#cw{width:100%;height:55vh;position:relative}
+#csv{width:100%;height:100%}
+.c-link{stroke:var(--blue);stroke-width:1.5;opacity:.25;stroke-dasharray:5 5;animation:dash 2s linear infinite}
+#otxt{text-align:center;margin-top:14px}
+#otxt h2{font-size:28px;margin-bottom:6px;opacity:0;transition:opacity .8s}
+#otxt p{font-size:15px;color:var(--t2);max-width:660px;margin:0 auto;line-height:1.6;opacity:0;transition:opacity .8s}
+.pr-row{display:flex;gap:18px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+.pr-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;width:190px;text-align:left;opacity:0;transform:translateY(14px);transition:.5s}
+.pr-card.on{opacity:1;transform:none}
+.pr-card h4{font-size:13px;margin-bottom:3px;display:flex;gap:6px;align-items:center}
+.pr-card p{font-size:11px;color:var(--t2);line-height:1.4}
+
+/* END-TO-END FLOW */
+#a12{padding:20px 40px!important;flex-direction:row!important;gap:20px}
+.chat-phone{width:380px;flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:20px;display:flex;flex-direction:column;overflow:hidden;max-height:88vh}
+.phone-bar{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.phone-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:16px}
+.phone-name{font-weight:600;font-size:14px}
+.phone-status{font-size:11px;color:var(--green)}
+.chat-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.chat-body::-webkit-scrollbar{width:4px}
+.chat-body::-webkit-scrollbar-thumb{background:var(--t3);border-radius:2px}
+.msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5;opacity:0;transform:translateY(8px);transition:.4s}
+.msg.on{opacity:1;transform:none}
+.msg.user{background:var(--blue);color:white;align-self:flex-end;border-bottom-right-radius:4px}
+.msg.ai{background:var(--bg2);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:4px}
+.msg.ai .msg-agent{font-size:10px;color:var(--t3);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.msg.notify{background:var(--amber-d);border:1px solid rgba(245,158,11,.3);align-self:center;text-align:center;border-radius:10px;font-size:12px;color:var(--amber);max-width:90%}
+.msg.notify .ntfy-title{font-weight:600;margin-bottom:3px}
+.hitl-inline{background:var(--card);border:1px solid var(--amber);border-radius:10px;padding:10px 14px;margin-top:6px}
+.hitl-inline p{font-size:11px;color:var(--t2);margin-bottom:8px}
+.hitl-inline .ha{display:flex;gap:6px}
+.hbtn{padding:6px 14px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:'Inter';transition:.2s}
+.hbtn.ok{background:var(--green);color:#fff}.hbtn.ok:hover{box-shadow:0 0 10px var(--green-g)}
+.hbtn.no{background:transparent;border:1px solid var(--t3);color:var(--t2)}
+.chat-input{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border)}
+.chat-input input{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--t1);font-size:12px;outline:none}
+.chat-input button{background:var(--blue);color:white;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer}
+
+/* Backend panel */
+.backend{flex:1;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.be-header{font-size:12px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:1px;padding:4px 0}
+.agent-status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.as-chip{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px;opacity:.4;transition:.5s}
+.as-chip.active{opacity:1;border-color:var(--blue);box-shadow:0 0 8px var(--blue-g)}
+.as-chip .asd{width:6px;height:6px;border-radius:50%;background:var(--t3);transition:.3s}
+.as-chip.active .asd{background:var(--green);box-shadow:0 0 5px var(--green-g)}
+.be-log{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.be-log .blh{padding:7px 12px;border-bottom:1px solid var(--border);font-size:10px;color:var(--t3);font-weight:500;display:flex;align-items:center;gap:6px}
+.be-log-body{flex:1;overflow-y:auto;padding:8px 12px;font-size:11px;line-height:1.8}
+.be-log-body::-webkit-scrollbar{width:3px}
+.be-log-body::-webkit-scrollbar-thumb{background:var(--t3);border-radius:2px}
+.ble{opacity:0;transform:translateX(-6px);transition:.3s;padding:1px 0}
+.ble.on{opacity:1;transform:none}
+.ble .bla{color:var(--blue);font-weight:500}
+.ble .blm{color:var(--t2)}
+.ble.ia .blm{color:var(--purple)}
+.ble.al .blm{color:var(--amber)}
+.be-milestones{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;max-height:140px;overflow-y:auto}
+.be-milestones h4{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600}
+.bm-item{font-size:11px;color:var(--t2);padding:2px 0;opacity:0;transition:.3s}
+.bm-item.on{opacity:1;color:var(--green)}
+
+/* TAKEAWAY */
+.tk-pre{font-size:26px;color:var(--t2);text-align:center;max-width:800px;line-height:1.6;opacity:0;transition:opacity 1s}
+.tk-pre em{font-style:normal;font-weight:500}
+.tk-pre .hl-b{color:var(--blue)}.tk-pre .hl-a{color:var(--amber)}
+.cc-row{display:flex;gap:44px;margin:50px 0}
+.cc{text-align:center;max-width:250px;opacity:0;transform:translateY(18px);transition:.6s}
+.cc.on{opacity:1;transform:none}
+.cc .ci{font-size:44px;margin-bottom:14px}
+.cc h3{font-size:20px;margin-bottom:8px}
+.cc p{font-size:14px;color:var(--t2);line-height:1.6}
+.fin{font-family:'Space Grotesk';font-size:36px;font-weight:600;text-align:center;max-width:880px;line-height:1.4;background:linear-gradient(135deg,var(--blue),#818CF8,var(--blue));background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 4s ease infinite;opacity:0;transition:opacity 1.2s}
+@media(max-width:1100px){.builder,#a12{flex-direction:column!important;padding:20px!important}.bl{width:100%}.chat-phone{width:100%}.agents-grid{grid-template-columns:repeat(2,1fr)}.big-text{font-size:30px}.wave-row{flex-direction:column;align-items:center}.stat-row{flex-wrap:wrap;gap:24px}}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+<div id="deck">
+  <div class="s on" id="a1"><div class="hero-num" id="hn">340+</div><div class="hero-label" id="hl">individual tasks to move a family from New York to London</div><div class="stat-row"><div class="stat-box"><div class="num">47</div><div class="lbl">services to coordinate</div></div><div class="stat-box"><div class="num">6 mo</div><div class="lbl">average timeline</div></div><div class="stat-box"><div class="num">7</div><div class="lbl">life domains affected</div></div><div class="stat-box"><div class="num">1</div><div class="lbl">overwhelmed family</div></div></div><div class="tagline" id="tg">Visas. Housing. Schools. Finances. Logistics. Healthcare. Emotional wellbeing.<br>Today, it's spreadsheets, browser tabs, and stress.</div></div>
+  <div class="s" id="a2"><div class="big-text" id="bt1"></div><div class="big-text" id="bt2" style="margin-top:10px"></div><div class="wave-row" id="wr"><div class="wave" id="w1"><div class="era">Wave 1 — RPA</div><h3>Automate Clicks</h3><p>Rule-based. Brittle. Broke when anything changed.</p></div><div class="wave" id="w2"><div class="era">Wave 2 — Generative AI</div><h3>Understand Language</h3><p>Could draft and summarize. But couldn't take action.</p></div><div class="wave" id="w3"><div class="era">Wave 3 — Agentic AI</div><h3>Complete Work</h3><p>Plans. Uses tools. Keeps state. Coordinates. Escalates.</p></div></div><div id="punchline">Let's build an agentic system for this move. One agent at a time.</div></div>
+  <div class="s" id="a3"><h2 style="font-size:30px;opacity:0" id="a3t">7 Specialized Agents. One Coordinated System.</h2><p class="subtitle" id="a3s" style="font-size:15px;color:var(--t2);max-width:700px;text-align:center;margin-top:24px;opacity:0;transition:opacity .8s">Each agent has a clear role, its own tools, and knows when to ask a human.</p><div class="agents-grid" id="agrid"></div></div>
+  <!-- Agent builders 4-10 generated by JS -->
+  <div class="s builder" id="a4"></div><div class="s builder" id="a5"></div><div class="s builder" id="a6"></div><div class="s builder" id="a7"></div><div class="s builder" id="a8"></div><div class="s builder" id="a9"></div><div class="s builder" id="a10"></div>
+  <!-- 11: Constellation -->
+  <div class="s" id="a11" style="padding:36px 56px!important"><div id="cw"><svg id="csv"></svg></div><div id="otxt"><h2 id="ot">Not 7 separate tools. One coordinated system.</h2><p id="os">Agents share context, coordinate actions, and escalate critical decisions to you.</p><div class="pr-row" id="prow"></div></div></div>
+  <!-- 12: End-to-end flow -->
+  <div class="s" id="a12">
+    <div class="chat-phone" id="phone"><div class="phone-bar"><div class="phone-avatar">✦</div><div><div class="phone-name">Relocation Assistant</div><div class="phone-status">Online</div></div></div><div class="chat-body" id="chat-body"></div><div class="chat-input"><input placeholder="Type a message..." readonly><button>Send</button></div></div>
+    <div class="backend"><div class="be-header">Agent System — Behind the Scenes</div><div class="agent-status-grid" id="asg"></div><div class="be-log"><div class="blh"><span class="live-dot" style="width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1.5s infinite"></span> SYSTEM LOG</div><div class="be-log-body" id="blb"></div></div><div class="be-milestones" id="bm"><h4>Progress</h4></div></div>
+  </div>
+  <!-- 13: Takeaway -->
+  <div class="s" id="a13"><div class="tk-pre" id="tkp">We're moving from a world where <em class="hl-a">humans coordinate everything</em>...<br>to a world where <em class="hl-b">systems coordinate</em>, and <em class="hl-a">humans direct</em>.</div><div class="cc-row"><div class="cc" id="c1"><div class="ci">🛠️</div><h3>Agents need tools</h3><p>Only as powerful as the systems they connect to</p></div><div class="cc" id="c2"><div class="ci">🤝</div><h3>Humans stay in the loop</h3><p>AI prepares and executes. Humans decide and own.</p></div><div class="cc" id="c3"><div class="ci">🔗</div><h3>Power is in the system</h3><p>One agent is useful. Seven together is transformative.</p></div></div><div class="fin" id="fin">The future is not one powerful AI.<br>It's a system of intelligent agents working together on your behalf.</div></div>
+</div>
+<div id="nav"></div><div id="counter"></div><canvas id="mini"></canvas>
+
+<script>
+const TOTAL=13;let cur=1,TT=[],tran=false;
+
+// Particles
+!function(){const c=document.getElementById('particles'),x=c.getContext('2d'),ps=[];function rs(){c.width=innerWidth;c.height=innerHeight}rs();addEventListener('resize',rs);for(let i=0;i<40;i++)ps.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,r:Math.random()*1.3+.4,a:Math.random()*.2+.08});!function d(){x.clearRect(0,0,c.width,c.height);ps.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=c.width;if(p.x>c.width)p.x=0;if(p.y<0)p.y=c.height;if(p.y>c.height)p.y=0;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fillStyle=`rgba(59,130,246,${p.a})`;x.fill();for(let j=i+1;j<ps.length;j++){const dx=p.x-ps[j].x,dy=p.y-ps[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<120){x.beginPath();x.moveTo(p.x,p.y);x.lineTo(ps[j].x,ps[j].y);x.strokeStyle=`rgba(59,130,246,${.04*(1-d/120)})`;x.lineWidth=.5;x.stroke()}}});requestAnimationFrame(d)}()}();
+
+// Agent data with builder configs
+const AG=[
+  {id:'immigration',icon:'🛂',name:'Immigration Navigator',color:'#3B82F6',role:'Manages visas, documents, and compliance timelines',
+   prompt:`<span class="kw">role:</span> <span class="str">Immigration Navigator</span>\n<span class="cmt"># Guides US→UK family visa process</span>\n<span class="kw">goal:</span> <span class="str">Complete Tier 2 visa for family of 4</span>\n<span class="kw">behavior:</span>\n  - Check requirements before acting\n  - Track document dependencies\n  - Never submit forms without approval`,
+   tools:[{i:'🌐',n:'Gov.UK Portal',d:'Check visa requirements'},{i:'📁',n:'Google Drive',d:'Store documents'},{i:'📅',n:'Calendar',d:'Schedule appointments'},{i:'✉️',n:'Email',d:'Draft communications'},{i:'⚖️',n:'Immigration Law DB',d:'Query legal rules'}],
+   fields:[{n:'Full Legal Name',t:'passport'},{n:'Passport Number',t:'passport'},{n:'Sponsor ID',t:'sponsor letter'},{n:'Salary & Title',t:'contract'},{n:'Dependents',t:'birth certs'},{n:'TB Test Results',t:'medical cert'}],
+   rules:[{h:'🟡 Cost > £500',d:'Get approval before high-cost actions'},{h:'🟡 Legal submissions',d:'Never submit gov forms without review'},{h:'🟡 Visa type choice',d:'Present options, let human decide'},{h:'🟡 Conflicting info',d:'Flag when sources disagree'}],
+   test:[{t:'act',x:'🔍 Checking Tier 2 requirements...'},{t:'res',x:'✓ Tier 2 Skilled Worker + Dependents identified'},{t:'act',x:'📋 Extracting passport data...'},{t:'res',x:'✓ John Smith, #987654321, exp 2029'},{t:'act',x:'🌐 Querying Gov.UK for docs needed...'},{t:'alert',x:'⚠️ Missing: TB test certificates'},{t:'act',x:'📅 Booking TB test — Apr 22'},{t:'human',x:'🟡 ESCALATION: Visa type — Global Talent vs Skilled Worker?'},{t:'res',x:'✅ Test passed. 5 tools, 6 fields, 1 escalation.'}]},
+  {id:'housing',icon:'🏠',name:'Housing Scout',color:'#10B981',role:'Finds the right London home matching schools, commute, budget',
+   prompt:`<span class="kw">role:</span> <span class="str">Housing Scout</span>\n<span class="cmt"># Finds family homes in London</span>\n<span class="kw">goal:</span> <span class="str">Shortlist 3 properties matching criteria</span>\n<span class="kw">behavior:</span>\n  - Cross-reference with school zones\n  - Calculate commute times\n  - Score and rank all options`,
+   tools:[{i:'🏘️',n:'Rightmove API',d:'Search UK listings'},{i:'🔍',n:'Zoopla API',d:'Compare properties'},{i:'🏫',n:'School Ratings DB',d:'Ofsted data'},{i:'🚇',n:'Commute Calculator',d:'TfL journey times'},{i:'🗺️',n:'Google Maps',d:'Location analysis'},{i:'💷',n:'Budget Tool',d:'Cost modeling'}],
+   fields:[{n:'Bedrooms needed',t:'requirements'},{n:'Max budget/mo',t:'financial plan'},{n:'Commute destination',t:'job offer'},{n:'School ages',t:'family profile'},{n:'Must-haves',t:'preferences'},{n:'Deal-breakers',t:'preferences'}],
+   rules:[{h:'🟡 Over-budget property',d:'Flag if >10% above max'},{h:'🟡 School zone trade-off',d:'Show comparison when zones conflict'},{h:'🟡 Lease commitment',d:'Approval before any booking'},{h:'🟡 Neighborhood safety',d:'Flag any concerns found'}],
+   test:[{t:'act',x:'📊 Analyzing: 3-bed, <40min commute, £3k/mo'},{t:'act',x:'🔍 Searching 847 listings → 43 matches'},{t:'res',x:'✓ 18 in "Outstanding" school zones'},{t:'act',x:'🚇 Greenwich: 22min, Dulwich: 35min'},{t:'res',x:'✓ #1 Greenwich Victorian (94/100)'},{t:'human',x:'🟡 Top property is 15% over budget but #1 school zone. Override?'},{t:'res',x:'✅ Test passed. 6 tools, 4 fields, 1 escalation.'}]},
+  {id:'school',icon:'🏫',name:'School Coordinator',color:'#8B5CF6',role:'Handles school research, applications, enrollment',
+   prompt:`<span class="kw">role:</span> <span class="str">School Coordinator</span>\n<span class="cmt"># Manages UK school enrollment</span>\n<span class="kw">goal:</span> <span class="str">Enroll 2 children in top schools</span>\n<span class="kw">behavior:</span>\n  - Align with Housing Scout areas\n  - Track all deadlines strictly\n  - Prepare complete application packages`,
+   tools:[{i:'📊',n:'Ofsted Database',d:'School ratings'},{i:'🏫',n:'School Portals',d:'Submit applications'},{i:'📁',n:'Document Store',d:'Manage records'},{i:'✉️',n:'Email',d:'School communications'},{i:'📅',n:'Calendar',d:'Track deadlines'}],
+   fields:[{n:'Current grade level',t:'US school records'},{n:'Academic transcripts',t:'school records'},{n:'Immunization records',t:'medical files'},{n:'Special needs/IEP',t:'assessments'},{n:'Extracurriculars',t:'parent input'},{n:'Teacher references',t:'school records'}],
+   rules:[{h:'🟡 Application deadline',d:'Alert 3 weeks before any deadline'},{h:'🟡 Missing documents',d:'Block submission if incomplete'},{h:'🟡 School ranking trade-off',d:'Present options when availability conflicts with quality'},{h:'🟡 Fee-paying schools',d:'Approval needed for paid options'}],
+   test:[{t:'act',x:'🏫 Pulling Ofsted ratings near Greenwich...'},{t:'think',x:'↳ Using Housing Scout data'},{t:'res',x:'✓ 12 schools rated Good/Outstanding'},{t:'act',x:'📅 Checking Year 3 + Year 6 places...'},{t:'alert',x:'⚠️ Halstow Primary deadline: May 2'},{t:'act',x:'📋 Building application package...'},{t:'human',x:'🟡 Deadline in 3 weeks. Submit with temp address?'},{t:'res',x:'✅ Test passed. 5 tools, 4 fields, 1 escalation.'}]},
+  {id:'finance',icon:'💰',name:'Finance Orchestrator',color:'#F59E0B',role:'Manages tax, banking, currency, insurance transitions',
+   prompt:`<span class="kw">role:</span> <span class="str">Finance Orchestrator</span>\n<span class="cmt"># Handles cross-border financial transition</span>\n<span class="kw">goal:</span> <span class="str">Optimize family's financial move</span>\n<span class="kw">behavior:</span>\n  - Analyze tax implications first\n  - Never move money without approval\n  - Flag all compliance requirements`,
+   tools:[{i:'🏦',n:'Banking APIs',d:'Account management'},{i:'📊',n:'Tax Calculator',d:'Dual-country analysis'},{i:'💱',n:'FX Rates',d:'Currency optimization'},{i:'🛡️',n:'Insurance DB',d:'Gap analysis'},{i:'📁',n:'Document Vault',d:'Financial records'}],
+   fields:[{n:'Current salary',t:'pay stubs'},{n:'UK offer salary',t:'offer letter'},{n:'Investment accounts',t:'statements'},{n:'Retirement balance',t:'401k statement'},{n:'Property value',t:'appraisal'},{n:'Outstanding debts',t:'credit report'}],
+   rules:[{h:'🟡 Money transfers',d:'Approval for any transfer >$5,000'},{h:'🟡 Retirement decisions',d:'Must present all options with tax impact'},{h:'🟡 Property sale/rent',d:'Present 5-year comparison'},{h:'🟡 Tax filing changes',d:'Review before any election'}],
+   test:[{t:'act',x:'📊 Analyzing mid-year tax implications...'},{t:'res',x:'✓ Dual-filing required: US + UK'},{t:'alert',x:'⚠️ Exit tax on unrealized gains'},{t:'act',x:'💱 GBP/USD: recommend 60/40 split'},{t:'act',x:'🛡️ Insurance gap found: Jul 31 - Aug 14'},{t:'human',x:'🟡 401(k): Leave, transfer to SIPP, or cash out?'},{t:'res',x:'✅ Test passed. 5 tools, 5 fields, 1 escalation.'}]},
+  {id:'logistics',icon:'📦',name:'Logistics Commander',color:'#EF4444',role:'Coordinates shipping, customs, utilities, subscriptions',
+   prompt:`<span class="kw">role:</span> <span class="str">Logistics Commander</span>\n<span class="cmt"># Manages the physical relocation</span>\n<span class="kw">goal:</span> <span class="str">Seamless move NYC → London</span>\n<span class="kw">behavior:</span>\n  - Get multiple quotes always\n  - Verify customs requirements\n  - Sync utility dates precisely`,
+   tools:[{i:'📦',n:'Moving Co. APIs',d:'Get quotes'},{i:'📋',n:'Customs DB',d:'Declaration rules'},{i:'🔌',n:'Utility Providers',d:'Setup/cancel'},{i:'📬',n:'Mail Forwarding',d:'USPS redirect'},{i:'📱',n:'Subscription Mgr',d:'Update accounts'}],
+   fields:[{n:'Inventory list',t:'home survey'},{n:'Item values',t:'insurance docs'},{n:'Move-out date',t:'lease agreement'},{n:'Move-in date',t:'UK lease'},{n:'Special items',t:'parent input'},{n:'Storage needs',t:'parent input'}],
+   rules:[{h:'🟡 Shipping method',d:'Sea vs air — present cost/time trade-off'},{h:'🟡 Customs restricted items',d:'Flag immediately for removal'},{h:'🟡 Total cost >$10k',d:'Get budget approval'},{h:'🟡 Irreversible cancellations',d:'Confirm before canceling any service'}],
+   test:[{t:'act',x:'📦 Requesting 5 mover quotes...'},{t:'res',x:'✓ Crown $7,900, Allied $8,200...'},{t:'act',x:'📋 127 items, $34k value, no restricted'},{t:'act',x:'🔌 US utilities queued for Jul 28'},{t:'act',x:'🔌 UK utilities ordered for Aug 16'},{t:'human',x:'🟡 Sea freight 6-8 wks vs air 1 wk (3x cost)?'},{t:'res',x:'✅ Test passed. 5 tools, 4 fields, 1 escalation.'}]},
+  {id:'healthcare',icon:'🏥',name:'Healthcare Bridge',color:'#06B6D4',role:'Transitions medical records, prescriptions, finds new doctors',
+   prompt:`<span class="kw">role:</span> <span class="str">Healthcare Bridge</span>\n<span class="cmt"># Ensures medical continuity</span>\n<span class="kw">goal:</span> <span class="str">Seamless healthcare transition</span>\n<span class="kw">behavior:</span>\n  - Prioritize prescription continuity\n  - Use Housing Scout location data\n  - Verify NHS eligibility first`,
+   tools:[{i:'🏥',n:'NHS Registration',d:'Register family'},{i:'📋',n:'Medical Records',d:'Transfer files'},{i:'💊',n:'Pharmacy DB',d:'UK equivalents'},{i:'🛡️',n:'Insurance Portal',d:'Bridge coverage'}],
+   fields:[{n:'Current medications',t:'prescription records'},{n:'Allergies',t:'medical records'},{n:'Vaccination history',t:'immunization records'},{n:'Specialist referrals',t:'doctor notes'},{n:'Dental records',t:'dentist files'},{n:'Mental health notes',t:'therapist records'}],
+   rules:[{h:'🟡 Medication changes',d:'Approval before switching any prescription'},{h:'🟡 GP registration',d:'Confirm family wants specific practice'},{h:'🟡 Private vs NHS',d:'Present cost comparison'},{h:'🟡 Specialist referrals',d:'Flag if wait time >4 weeks'}],
+   test:[{t:'act',x:'🏥 Checking NHS eligibility...'},{t:'think',x:'↳ Using Housing Scout: Greenwich'},{t:'res',x:'✓ Eligible upon UK residency'},{t:'act',x:'🔍 GP search: Vanbrugh Group 0.3mi'},{t:'act',x:'💊 2/3 meds have UK equivalents'},{t:'alert',x:'⚠️ 1 needs specialist referral'},{t:'human',x:'🟡 Register family at Vanbrugh Group Practice?'},{t:'res',x:'✅ Test passed. 4 tools, 5 fields, 1 escalation.'}]},
+  {id:'wellbeing',icon:'👨‍👩‍👧‍👦',name:'Family Wellbeing',color:'#EC4899',role:'Cultural prep, social connections, spouse career support',
+   prompt:`<span class="kw">role:</span> <span class="str">Family Wellbeing Coordinator</span>\n<span class="cmt"># Handles the human side of moving</span>\n<span class="kw">goal:</span> <span class="str">Happy, connected family in London</span>\n<span class="kw">behavior:</span>\n  - Coordinate with Housing Scout area\n  - Support each family member individually\n  - Plan first 30 days proactively`,
+   tools:[{i:'🏘️',n:'Community APIs',d:'Local info'},{i:'💼',n:'Job Boards',d:'Spouse careers'},{i:'🎭',n:'Culture DB',d:'UK customs'},{i:'👥',n:'Social Platforms',d:'Connect families'},{i:'📅',n:'Event Calendar',d:'Activities'}],
+   fields:[{n:'Spouse career field',t:'resume/LinkedIn'},{n:'Kids interests',t:'parent input'},{n:'Dietary needs',t:'family profile'},{n:'Language needs',t:'assessment'},{n:'Social preferences',t:'parent input'},{n:'Special considerations',t:'parent input'}],
+   rules:[{h:'🟡 Farewell planning',d:'Confirm dates and guest lists'},{h:'🟡 Activity commitments',d:'Approval before signing kids up'},{h:'🟡 Spouse job applications',d:'Review before submitting'},{h:'🟡 Budget for social activities',d:'Check monthly allocation'}],
+   test:[{t:'act',x:'🏘️ Researching Greenwich family life...'},{t:'think',x:'↳ Using Housing Scout selection'},{t:'res',x:'✓ Parks, museums, markets nearby'},{t:'act',x:'💼 23 matching spouse roles found'},{t:'act',x:'⚽ Football, swimming, coding clubs'},{t:'act',x:'📋 "First 30 Days" plan created'},{t:'human',x:'🟡 Review first-week family schedule?'},{t:'res',x:'✅ Test passed. 5 tools, 4 fields, 1 escalation.'}]}
+];
+
+// Build agent slide HTML
+AG.forEach((a,i)=>{
+  const n=i+4,el=document.getElementById('a'+n);
+  el.innerHTML=`<div class="bl" id="bl${n}">
+    <h2 style="font-size:18px;margin-bottom:2px;opacity:0" id="bt-${n}">Build Agent ${i+1}: ${a.name}</h2>
+    <p style="font-size:12px;color:var(--t2);margin-bottom:12px;opacity:0" id="bs-${n}">${a.icon} ${a.role}</p>
+    <div class="build-steps" id="steps-${n}">${['Prompt','Tools','Extract','Rules','Test'].map((s,j)=>`<div class="bstep${j===0?' active':''}" data-s="${j}"><span class="bnum">${j+1}</span>${s}</div>`).join('')}</div>
+    <div class="bp active" id="bp-${n}-0"><div class="bp-title">System Prompt</div><div class="bp-desc">Define who this agent is and how it behaves.</div><div class="code-editor"><div class="ce-hdr"><span class="ce-dot" style="background:#EF4444"></span><span class="ce-dot" style="background:#F59E0B"></span><span class="ce-dot" style="background:#10B981"></span><span class="ce-file">system_prompt.md</span></div><div class="ce-body" id="ce-${n}"></div></div><button class="nbtn" onclick="nxStep(${n})">Set Prompt</button></div>
+    <div class="bp" id="bp-${n}-1"><div class="bp-title">Connect Tools</div><div class="bp-desc">Click each tool to connect it. Need 3+.</div><div class="tool-toggles" id="tt-${n}">${a.tools.map(t=>`<div class="tool-toggle" onclick="togTool(this,${n})"><span class="tt-icon">${t.i}</span><div class="tt-info"><div class="tt-name">${t.n}</div><div class="tt-desc">${t.d}</div></div><div class="tt-sw"></div></div>`).join('')}</div><button class="nbtn off" id="tnx-${n}" onclick="nxStep(${n})">Connect & Continue</button></div>
+    <div class="bp" id="bp-${n}-2"><div class="bp-title">Document Extraction</div><div class="bp-desc">Click fields to extract. Need 3+.</div><div class="field-list" id="fl-${n}">${a.fields.map(f=>`<div class="field-item" onclick="togField(this,${n})"><span class="fi-name">${f.n}</span><span class="fi-type">${f.t}</span><span class="fi-chk"></span></div>`).join('')}</div><button class="nbtn off" id="fnx-${n}" onclick="nxStep(${n})">Add & Continue</button></div>
+    <div class="bp" id="bp-${n}-3"><div class="bp-title">Escalation Rules</div><div class="bp-desc">Click rules to enable. Need 2+.</div><div id="rl-${n}">${a.rules.map(r=>`<div class="rule-card" onclick="togRule(this,${n})"><div class="rc-header">${r.h}</div><div class="rc-desc">${r.d}</div></div>`).join('')}</div><button class="nbtn off" id="rnx-${n}" onclick="nxStep(${n})">Set Rules</button></div>
+    <div class="bp" id="bp-${n}-4"><div class="bp-title">Test Agent</div><div class="bp-desc">Watch it handle a real task.</div><button class="test-btn" id="tbtn-${n}" onclick="runTest(${n})">▶ Run Agent</button></div>
+  </div>
+  <div class="br"><div class="pv-hdr">${a.icon} ${a.name} — Preview</div><div class="pv-body" id="pv-${n}"><div style="text-align:center;padding:30px;color:var(--t3)"><div style="font-size:36px;margin-bottom:10px">${a.icon}</div><div style="font-size:13px">Configure on the left.<br>Preview builds here.</div></div></div></div>`;
+});
+
+// Build nav
+const nav=document.getElementById('nav');
+for(let i=1;i<=TOTAL;i++){const d=document.createElement('div');d.className='dot'+(i===1?' on':'');d.onclick=()=>go(i);nav.appendChild(d)}
+function updNav(){document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i+1===cur));document.getElementById('counter').textContent=cur+' / '+TOTAL}
+updNav();
+
+function go(n){if(n<1||n>TOTAL||n===cur||tran)return;tran=true;TT.forEach(clearTimeout);TT=[];document.querySelector('.s.on').classList.remove('on');cur=n;updNav();setTimeout(()=>{document.getElementById('a'+n).classList.add('on');tran=false;enter(n)},100);const m=document.getElementById('mini');if(n>=4&&n<=10){m.classList.add('vis');drawMini(n-3)}else m.classList.remove('vis')}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(cur+1)}else if(e.key==='ArrowLeft'){e.preventDefault();go(cur-1)}});
+
+function type(el,txt,spd=40,cb){el.textContent='';el.style.opacity='1';let i=0;!function t(){if(i<txt.length){el.textContent+=txt[i];i++;const d='.?,!'.includes(txt[i-1])?spd*3.5:spd+Math.random()*18;TT.push(setTimeout(t,d))}else if(cb)cb()}()}
+function typeHTML(el,html,spd){el.innerHTML='';let i=0,buf='',inTag=false;!function t(){if(i<html.length){const ch=html[i];if(ch==='<')inTag=true;if(ch==='>')inTag=false;buf+=ch;i++;if(!inTag)el.innerHTML=buf;TT.push(setTimeout(t,inTag?0:spd+Math.random()*6))}else el.innerHTML=buf}()}
+function drawMini(count){const c=document.getElementById('mini'),x=c.getContext('2d'),s=120;c.width=s*2;c.height=s*2;c.style.width=s+'px';c.style.height=s+'px';x.scale(2,2);x.clearRect(0,0,s,s);const cx=s/2,cy=s/2,r=40,pos=[];for(let i=0;i<count;i++){const a=(i/7)*Math.PI*2-Math.PI/2;pos.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r,col:AG[i].color})}x.lineWidth=.5;for(let i=0;i<pos.length;i++)for(let j=i+1;j<pos.length;j++){x.beginPath();x.moveTo(pos[i].x,pos[i].y);x.lineTo(pos[j].x,pos[j].y);x.strokeStyle='rgba(59,130,246,.15)';x.stroke()}pos.forEach(p=>{x.beginPath();x.arc(p.x,p.y,4,0,Math.PI*2);x.fillStyle=p.col;x.fill()});if(count>1){x.beginPath();x.arc(cx,cy,2.5,0,Math.PI*2);x.fillStyle='#F1F5F9';x.fill()}}
+
+// Per-slide step tracker
+const steps={};
+function getStep(n){if(!steps[n])steps[n]=0;return steps[n]}
+
+function enterBuilder(n){
+  steps[n]=0;
+  const i=n-4;const a=AG[i];
+  TT.push(setTimeout(()=>{document.getElementById('bt-'+n).style.opacity='1';document.getElementById('bt-'+n).style.transition='opacity .5s'},100));
+  TT.push(setTimeout(()=>{document.getElementById('bs-'+n).style.opacity='1';document.getElementById('bs-'+n).style.transition='opacity .5s'},300));
+  // Reset
+  document.querySelectorAll(`#a${n} .bp`).forEach(p=>{p.classList.remove('active');p.style.opacity='0'});
+  document.querySelectorAll(`#steps-${n} .bstep`).forEach(s=>{s.classList.remove('active','done')});
+  document.querySelectorAll(`#steps-${n} .bstep`)[0].classList.add('active');
+  const p0=document.getElementById(`bp-${n}-0`);p0.classList.add('active');
+  TT.push(setTimeout(()=>{p0.style.opacity='1';typeHTML(document.getElementById('ce-'+n),a.prompt,12)},500));
+  document.querySelectorAll(`#tt-${n} .tool-toggle`).forEach(t=>t.classList.remove('connected'));
+  document.querySelectorAll(`#fl-${n} .field-item`).forEach(f=>{f.classList.remove('added');f.querySelector('.fi-chk').textContent=''});
+  document.querySelectorAll(`#rl-${n} .rule-card`).forEach(r=>r.classList.remove('enabled'));
+  ['tnx-','fnx-','rnx-'].forEach(p=>{const b=document.getElementById(p+n);if(b){b.classList.add('off')}});
+  document.getElementById('pv-'+n).innerHTML=`<div style="text-align:center;padding:30px;color:var(--t3)"><div style="font-size:36px;margin-bottom:10px">${a.icon}</div><div style="font-size:13px">Configure on the left.<br>Preview builds here.</div></div>`;
+}
+
+function nxStep(n){
+  const s=document.querySelectorAll(`#steps-${n} .bstep`);
+  const cur=getStep(n);s[cur].classList.remove('active');s[cur].classList.add('done');
+  steps[n]++;const nxt=steps[n];if(nxt>=5)return;
+  s[nxt].classList.add('active');
+  document.querySelectorAll(`#a${n} .bp`).forEach(p=>{p.classList.remove('active');p.style.opacity='0'});
+  const panel=document.getElementById(`bp-${n}-${nxt}`);panel.classList.add('active');
+  setTimeout(()=>panel.style.opacity='1',50);
+  updPreview(n);
+}
+
+function togTool(el,n){el.classList.toggle('connected');const c=document.querySelectorAll(`#tt-${n} .tool-toggle.connected`).length;const b=document.getElementById('tnx-'+n);c>=3?b.classList.remove('off'):b.classList.add('off');updPreview(n)}
+function togField(el,n){el.classList.toggle('added');el.querySelector('.fi-chk').textContent=el.classList.contains('added')?'✓':'';const c=document.querySelectorAll(`#fl-${n} .field-item.added`).length;const b=document.getElementById('fnx-'+n);c>=3?b.classList.remove('off'):b.classList.add('off');updPreview(n)}
+function togRule(el,n){el.classList.toggle('enabled');const c=document.querySelectorAll(`#rl-${n} .rule-card.enabled`).length;const b=document.getElementById('rnx-'+n);c>=2?b.classList.remove('off'):b.classList.add('off');updPreview(n)}
+
+function updPreview(n){
+  const pb=document.getElementById('pv-'+n);const a=AG[n-4];
+  let h=`<div class="pv-sec"><div class="pv-lbl">Agent</div><div style="color:${a.color};font-weight:600;font-size:14px">${a.icon} ${a.name}</div></div>`;
+  const tools=document.querySelectorAll(`#tt-${n} .tool-toggle.connected`);
+  if(tools.length){h+=`<div class="pv-sec"><div class="pv-lbl">Tools (${tools.length})</div><div>${[...tools].map(t=>`<span class="pv-pill tool">${t.querySelector('.tt-name').textContent}</span>`).join('')}</div></div>`}
+  const fields=document.querySelectorAll(`#fl-${n} .field-item.added`);
+  if(fields.length){h+=`<div class="pv-sec"><div class="pv-lbl">Fields (${fields.length})</div><div>${[...fields].map(f=>`<span class="pv-pill field">${f.querySelector('.fi-name').textContent}</span>`).join('')}</div></div>`}
+  const rules=document.querySelectorAll(`#rl-${n} .rule-card.enabled`);
+  if(rules.length){h+=`<div class="pv-sec"><div class="pv-lbl">Rules (${rules.length})</div><div>${[...rules].map(r=>`<span class="pv-pill rule">${r.querySelector('.rc-header').textContent.replace(/🟡 /,'')}</span>`).join('')}</div></div>`}
+  pb.innerHTML=h;
+}
+
+function runTest(n){
+  const btn=document.getElementById('tbtn-'+n);btn.textContent='⏳ Running...';btn.classList.add('running');
+  const pb=document.getElementById('pv-'+n);const a=AG[n-4];
+  pb.innerHTML=`<div class="pv-sec"><div class="pv-lbl">🧪 Test Run — ${a.name}</div></div>`;
+  a.test.forEach((line,i)=>{TT.push(setTimeout(()=>{
+    const d=document.createElement('div');d.className='sl '+line.t;d.textContent=line.x;
+    pb.appendChild(d);setTimeout(()=>d.classList.add('on'),20);pb.scrollTop=pb.scrollHeight;
+    if(i===a.test.length-1){btn.textContent='✓ Passed';btn.style.background='var(--green)';
+      const fin=document.createElement('button');fin.className='nbtn fin';fin.textContent='Agent Built ';fin.onclick=()=>go(n+1);
+      document.getElementById(`bp-${n}-4`).appendChild(fin);
+      const ss=document.querySelectorAll(`#steps-${n} .bstep`);ss[4].classList.remove('active');ss[4].classList.add('done');
+    }
+  },800+i*550))});
+}
+
+// ACT 1
+function enterA1(){TT.push(setTimeout(()=>{document.getElementById('hn').style.opacity='1';document.getElementById('hn').style.transition='opacity .8s'},200));TT.push(setTimeout(()=>{document.getElementById('hl').style.opacity='1';document.getElementById('hl').style.transition='opacity .8s'},700));document.querySelectorAll('.stat-box').forEach((b,i)=>TT.push(setTimeout(()=>b.classList.add('on'),1200+i*250)));TT.push(setTimeout(()=>document.getElementById('tg').style.opacity='1',2600))}
+
+// ACT 2
+function enterA2(){type(document.getElementById('bt1'),'What if you didn\'t have to manage all of this yourself?',50,()=>{TT.push(setTimeout(()=>{type(document.getElementById('bt2'),'What if you could build a team of AI agents to handle each piece?',45,()=>{TT.push(setTimeout(()=>{document.getElementById('wr').style.opacity='1';['w1','w2','w3'].forEach((id,i)=>TT.push(setTimeout(()=>{document.getElementById(id).classList.add('on');if(id==='w3')TT.push(setTimeout(()=>{document.getElementById(id).classList.add('glow');TT.push(setTimeout(()=>document.getElementById('punchline').style.opacity='1',500))},350))},i*500)))},500))})},300))})}
+
+// ACT 3
+function enterA3(){TT.push(setTimeout(()=>{document.getElementById('a3t').style.opacity='1';document.getElementById('a3t').style.transition='opacity .6s'},150));TT.push(setTimeout(()=>document.getElementById('a3s').style.opacity='1',500));const g=document.getElementById('agrid');if(!g.children.length)AG.forEach(a=>{const d=document.createElement('div');d.className='ag-card';d.innerHTML=`<div class="ag-icon">${a.icon}</div><h4 style="color:${a.color}">${a.name}</h4><p>${a.role}</p>`;g.appendChild(d)});document.querySelectorAll('.ag-card').forEach((c,i)=>TT.push(setTimeout(()=>c.classList.add('on'),700+i*150)))}
+
+// ACT 11 — Constellation
+function enterA11(){const svg=document.getElementById('csv'),wrap=document.getElementById('cw');const w=wrap.clientWidth||900,h=wrap.clientHeight||400;svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.innerHTML='';const cx=w/2,cy=h/2,r=Math.min(w,h)*.3;const pos=AG.map((a,i)=>{const ang=(i/AG.length)*Math.PI*2-Math.PI/2;return{x:cx+Math.cos(ang)*r,y:cy+Math.sin(ang)*r,a}});[[0,1],[0,3],[1,2],[1,5],[2,5],[3,4],[4,5],[5,6],[2,6],[0,4],[3,6]].forEach(([i,j],idx)=>{const ln=document.createElementNS('http://www.w3.org/2000/svg','line');ln.setAttribute('x1',pos[i].x);ln.setAttribute('y1',pos[i].y);ln.setAttribute('x2',pos[j].x);ln.setAttribute('y2',pos[j].y);ln.setAttribute('class','c-link');ln.style.opacity='0';TT.push(setTimeout(()=>{ln.style.transition='opacity .5s';ln.style.opacity='.25'},300+idx*70));svg.appendChild(ln);const pk=document.createElementNS('http://www.w3.org/2000/svg','circle');pk.setAttribute('r','3');pk.setAttribute('fill',pos[i].a.color);pk.setAttribute('opacity','.6');const am=document.createElementNS('http://www.w3.org/2000/svg','animateMotion');am.setAttribute('dur',(3+Math.random()*2)+'s');am.setAttribute('repeatCount','indefinite');am.setAttribute('path',`M${pos[i].x},${pos[i].y} L${pos[j].x},${pos[j].y}`);pk.appendChild(am);svg.appendChild(pk)});const og=document.createElementNS('http://www.w3.org/2000/svg','g');og.style.opacity='0';const oc=document.createElementNS('http://www.w3.org/2000/svg','circle');oc.setAttribute('cx',cx);oc.setAttribute('cy',cy);oc.setAttribute('r','18');oc.setAttribute('fill','#0A1628');oc.setAttribute('stroke','#F1F5F9');oc.setAttribute('stroke-width','2');const otx=document.createElementNS('http://www.w3.org/2000/svg','text');otx.setAttribute('x',cx);otx.setAttribute('y',cy+4);otx.setAttribute('text-anchor','middle');otx.setAttribute('fill','#F1F5F9');otx.setAttribute('font-size','8');otx.setAttribute('font-family','Space Grotesk');otx.textContent='ORCH';og.appendChild(oc);og.appendChild(otx);svg.appendChild(og);TT.push(setTimeout(()=>{og.style.transition='opacity .8s';og.style.opacity='1'},600));pos.forEach((p,i)=>{const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.style.opacity='0';const cir=document.createElementNS('http://www.w3.org/2000/svg','circle');cir.setAttribute('cx',p.x);cir.setAttribute('cy',p.y);cir.setAttribute('r','28');cir.setAttribute('fill',p.a.color+'15');cir.setAttribute('stroke',p.a.color);cir.setAttribute('stroke-width','2');const ico=document.createElementNS('http://www.w3.org/2000/svg','text');ico.setAttribute('x',p.x);ico.setAttribute('y',p.y+5);ico.setAttribute('text-anchor','middle');ico.setAttribute('font-size','16');ico.textContent=p.a.icon;const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');lbl.setAttribute('x',p.x);lbl.setAttribute('y',p.y+44);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('fill','#94A3B8');lbl.setAttribute('font-size','10');lbl.setAttribute('font-family','Inter');lbl.textContent=p.a.name;g.appendChild(cir);g.appendChild(ico);g.appendChild(lbl);svg.appendChild(g);TT.push(setTimeout(()=>{g.style.transition='opacity .5s';g.style.opacity='1'},200+i*100))});TT.push(setTimeout(()=>document.getElementById('ot').style.opacity='1',1400));TT.push(setTimeout(()=>document.getElementById('os').style.opacity='1',2000));[{i:'🔧',t:'Tool Access',d:'Connect to real systems'},{i:'🧠',t:'Shared Memory',d:'Agents share context'},{i:'🤝',t:'Human-in-Loop',d:'Decisions surface to you'},{i:'🎯',t:'Orchestration',d:'One coordinator'}].forEach((p,i)=>{const pr=document.getElementById('prow');if(!i)pr.innerHTML='';const d=document.createElement('div');d.className='pr-card';d.innerHTML=`<h4>${p.i} ${p.t}</h4><p>${p.d}</p>`;pr.appendChild(d);TT.push(setTimeout(()=>d.classList.add('on'),2400+i*220))})}
+
+// ACT 12 — End-to-end chat flow
+function enterA12(){
+  const cb=document.getElementById('chat-body');cb.innerHTML='';
+  const blb=document.getElementById('blb');blb.innerHTML='';
+  const bm=document.getElementById('bm');bm.innerHTML='<h4>Progress</h4>';
+  // Agent status chips
+  const asg=document.getElementById('asg');asg.innerHTML='';
+  AG.forEach(a=>{const d=document.createElement('div');d.className='as-chip';d.setAttribute('data-id',a.id);d.innerHTML=`<span class="asd"></span>${a.icon} ${a.name.split(' ')[0]}`;asg.appendChild(d)});
+
+  const flow=[
+    {t:600,type:'user',text:"Hi! I just accepted a job offer in London. I need to move my whole family — spouse and two kids (7 and 10) — from Brooklyn. Start date is September 1st. Where do we begin?"},
+    {t:3000,type:'ai',agent:'Orchestrator',text:"Congratulations! I'm activating 7 specialized agents to handle your relocation. Let me coordinate everything. First, a few quick questions to get started."},
+    {t:5000,type:'ai',agent:'Orchestrator',text:"What's your total relocation budget? And does your employer offer any relocation support or sponsorship?"},
+    {t:7500,type:'user',text:"Budget is about $50,000. My employer is sponsoring the visa and covering flights."},
+    {t:9500,type:'ai',agent:'Immigration Navigator',text:"Great — I've started your Tier 2 visa process. Your employer needs to issue a Certificate of Sponsorship. I've drafted a request email to HR. I also need TB test certificates for all 4 family members.",activate:'immigration'},
+    {t:12000,type:'log',entries:[{a:'🛂 Immigration',m:'Visa requirements confirmed. Tier 2 + Dependents.'},{a:'🏠 Housing',m:'Starting neighborhood analysis...',act:'housing'},{a:'💰 Finance',m:'Calculating tax implications...',act:'finance'}]},
+    {t:14000,type:'notify',title:'🟡 Decision Needed',text:'Immigration: Your employer can sponsor Global Talent visa (3 wks, flexible) or Skilled Worker (8 wks, standard). Which do you prefer?',opts:['Global Talent','Skilled Worker']},
+    {t:18000,type:'ai',agent:'Housing Scout',text:"I've analyzed London neighborhoods based on your budget and commute needs. Top 3 areas: Greenwich (22 min commute, great schools), Dulwich (35 min, leafy), Blackheath (28 min, village feel). Want to see the shortlist?",activate:'housing'},
+    {t:20500,type:'log',entries:[{a:'🏠 → 🏫 School',m:'"Top areas shared. Adjusting school search radius."',c:'ia'},{a:'💰 → 🏠 Housing',m:'"Max rent: £3,200/mo after tax analysis."',c:'ia'},{a:'🏫 School',m:'Pulling Year 3 + Year 6 availability...',act:'school'}]},
+    {t:23000,type:'user',text:"Greenwich sounds perfect. What about schools for the kids?"},
+    {t:25000,type:'ai',agent:'School Coordinator',text:"I found 4 schools in Greenwich with Year 3 places and 2 with Year 6 spots. Top pick: Halstow Primary — rated Outstanding. But heads up: the Year 6 application deadline is May 2nd, just 3 weeks away.",activate:'school'},
+    {t:27500,type:'notify',title:'⏰ Deadline Alert',text:'School Coordinator: Halstow Primary application deadline is May 2. Package is 90% ready. Approve submitting with temporary Greenwich address?',opts:['Approve','Wait']},
+    {t:30500,type:'log',entries:[{a:'📦 Logistics',m:'5 mover quotes received. Crown: $7,900 (best)',act:'logistics'},{a:'🏥 Healthcare',m:'GP found 0.3mi from Greenwich property',act:'healthcare'},{a:'👨‍👩‍👧‍👦 Wellbeing',m:'First 30 days family plan created',act:'wellbeing'}]},
+    {t:33000,type:'ai',agent:'Finance Orchestrator',text:"Quick flag: your Brooklyn apartment. I've run the numbers — selling yields ~$180K now, renting it out generates $3,200/mo passive income. Here's the 5-year comparison. What's your preference?",activate:'finance'},
+    {t:35500,type:'notify',title:'🟡 Decision Needed',text:'Finance: Sell Brooklyn apartment (~$180K profit) or rent it out ($3,200/mo passive income)?',opts:['Sell','Rent Out']},
+    {t:38500,type:'ai',agent:'Orchestrator',text:"Here's your relocation status — 7 agents are coordinating across 47 services. We're on track for an August 15 move date. 23 tasks complete, 12 in progress, 8 awaiting your decisions. Anything you'd like me to adjust?"},
+    {t:41000,type:'milestone',items:['✅ Visa pathway confirmed','✅ Housing shortlist ready','✅ School apps submitted','✅ Tax strategy set','✅ Mover booked — Jun 15','✅ NHS GP registered','✅ Family transition plan created']}
+  ];
+
+  flow.forEach(item=>{TT.push(setTimeout(()=>{
+    if(item.type==='user'||item.type==='ai'){
+      const d=document.createElement('div');d.className=`msg ${item.type}`;
+      if(item.agent)d.innerHTML=`<div class="msg-agent">${item.agent}</div>${item.text}`;
+      else d.textContent=item.text;
+      cb.appendChild(d);requestAnimationFrame(()=>d.classList.add('on'));cb.scrollTop=cb.scrollHeight;
+      if(item.activate){const chip=document.querySelector(`.as-chip[data-id="${item.activate}"]`);if(chip)chip.classList.add('active')}
+    }
+    if(item.type==='notify'){
+      const d=document.createElement('div');d.className='msg notify';
+      d.innerHTML=`<div class="ntfy-title">${item.title}</div><div>${item.text}</div><div class="hitl-inline"><div class="ha">${item.opts.map((o,i)=>`<button class="hbtn ${i===0?'ok':'no'}" onclick="this.closest('.msg').style.borderColor='var(--green)';this.closest('.hitl-inline').innerHTML='<span style=\\'color:var(--green);font-size:11px\\'>✓ ${o} selected</span>'">${o}</button>`).join('')}</div></div>`;
+      cb.appendChild(d);requestAnimationFrame(()=>d.classList.add('on'));cb.scrollTop=cb.scrollHeight;
+    }
+    if(item.type==='log'){
+      item.entries.forEach((e,i)=>{TT.push(setTimeout(()=>{
+        const d=document.createElement('div');d.className='ble '+(e.c||'');d.innerHTML=`<span class="bla">${e.a}:</span> <span class="blm">${e.m}</span>`;
+        blb.appendChild(d);requestAnimationFrame(()=>d.classList.add('on'));blb.scrollTop=blb.scrollHeight;
+        if(e.act){const chip=document.querySelector(`.as-chip[data-id="${e.act}"]`);if(chip)chip.classList.add('active')}
+      },i*400))});
+    }
+    if(item.type==='milestone'){
+      item.items.forEach((m,i)=>{const d=document.createElement('div');d.className='bm-item';d.textContent=m;bm.appendChild(d);TT.push(setTimeout(()=>d.classList.add('on'),i*300))});
+    }
+  },item.t))});
+}
+
+// ACT 13 — Takeaway
+function enterA13(){TT.push(setTimeout(()=>document.getElementById('tkp').style.opacity='1',300));['c1','c2','c3'].forEach((id,i)=>TT.push(setTimeout(()=>document.getElementById(id).classList.add('on'),1200+i*450)));TT.push(setTimeout(()=>document.getElementById('fin').style.opacity='1',3000))}
+
+function enter(n){({1:enterA1,2:enterA2,3:enterA3,11:enterA11,12:enterA12,13:enterA13}[n]||(n>=4&&n<=10?()=>enterBuilder(n):()=>{}))()}
+enter(1);
+</script>
+</body>
+</html>
