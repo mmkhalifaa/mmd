@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The private bank, rebuilt around agents</title>
+<style>
+  :root {
+    --bg:           #F1EFE8;
+    --surface:      #FFFFFF;
+    --surface-alt:  #FAF8F1;
+    --ink:          #2C2C2A;
+    --ink-soft:     #444441;
+    --muted:        #5F5E5A;
+    --hint:         #888780;
+    --rule:         rgba(44,44,42,0.15);
+    --rule-strong:  rgba(44,44,42,0.30);
+    --coral-50:  #FAECE7;
+    --coral-100: #F5C4B3;
+    --coral-200: #F0997B;
+    --coral-400: #D85A30;
+    --coral-600: #993C1D;
+    --coral-800: #712B13;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+  }
+
+  .deck { position: relative; width: 100vw; height: 100vh; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 7vh 9vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 360ms ease-out;
+    background: var(--bg);
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  .progress {
+    position: fixed; bottom: 28px; right: 9vw;
+    font-size: 12px; font-weight: 500;
+    color: var(--muted); font-variant-numeric: tabular-nums;
+    z-index: 10;
+  }
+  body.cover-on .progress { opacity: 0; pointer-events: none; }
+  .nav-hint {
+    position: fixed; bottom: 28px; left: 9vw;
+    font-size: 12px; font-weight: 500; color: var(--hint);
+    z-index: 11; pointer-events: none;
+  }
+  body.cover-on .nav-hint { opacity: 0; }
+
+  /* Type */
+  .eyebrow {
+    font-size: 13px; font-weight: 500;
+    color: var(--coral-600);
+    margin-bottom: 28px;
+  }
+  .eyebrow .num { color: var(--hint); font-weight: 500; margin-right: 8px; }
+
+  h1 {
+    font-size: 44px; font-weight: 500; color: var(--ink);
+    line-height: 1.15; letter-spacing: -0.012em;
+    margin-bottom: 28px; max-width: 22ch;
+  }
+  h1.large { font-size: 56px; max-width: 18ch; line-height: 1.08; }
+  h1.small { font-size: 36px; max-width: 28ch; }
+
+  h2 {
+    font-size: 28px; font-weight: 500; color: var(--ink);
+    line-height: 1.25; letter-spacing: -0.008em;
+    margin-bottom: 20px; max-width: 32ch;
+  }
+
+  p.body {
+    font-size: 18px; font-weight: 400; color: var(--ink-soft);
+    line-height: 1.65; max-width: 56ch;
+  }
+
+  /* COVER */
+  .slide-cover { padding: 0; justify-content: stretch; }
+  .cover-inner {
+    height: 100%; width: 100%;
+    padding: 0 9vw;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: flex-start;
+  }
+  .cover-title {
+    font-size: 84px; font-weight: 500; color: var(--ink);
+    line-height: 1.04; letter-spacing: -0.02em;
+  }
+  .cover-title em {
+    font-style: normal; color: var(--coral-400); font-weight: 500;
+  }
+  .cover-sub {
+    margin-top: 36px;
+    font-size: 22px; font-weight: 400;
+    color: var(--muted); line-height: 1.5;
+  }
+
+  /* OPENING */
+  .opener { align-items: flex-start; }
+  .opener .frame {
+    font-size: 44px; font-weight: 500; color: var(--ink);
+    line-height: 1.18; letter-spacing: -0.012em;
+    max-width: 26ch;
+  }
+  .opener .frame em {
+    font-style: normal; color: var(--coral-400); font-weight: 500;
+  }
+  .opener .attrib {
+    margin-top: 40px;
+    font-size: 13px; font-weight: 500; color: var(--muted);
+  }
+
+  /* ANCHOR / 4-COL GRIDS */
+  .four-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-top: 4px;
+  }
+  .anchor-card {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 26px 26px;
+    display: flex; flex-direction: column;
+    gap: 12px;
+    min-height: 220px;
+  }
+  .anchor-card .h {
+    font-size: 22px; font-weight: 500;
+    color: var(--ink); letter-spacing: -0.008em;
+  }
+  .anchor-card .h em {
+    font-style: normal; color: var(--coral-400);
+  }
+  .anchor-card .b {
+    font-size: 14px; font-weight: 400;
+    color: var(--muted); line-height: 1.55;
+    margin-top: auto;
+  }
+
+  /* SHIFT / POSTURE 3-COL */
+  .three-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 4px;
+  }
+  .stmt-card {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 26px 28px;
+    display: flex; flex-direction: column;
+    gap: 16px;
+    min-height: 220px;
+  }
+  .stmt-card .n {
+    font-size: 14px; font-weight: 500;
+    color: var(--coral-600);
+    font-variant-numeric: tabular-nums;
+  }
+  .stmt-card .t {
+    font-size: 19px; font-weight: 400;
+    color: var(--ink); line-height: 1.5;
+  }
+
+  /* STRATEGY MAP */
+  .map-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .pillar-card {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 22px 22px 24px;
+    min-height: 200px;
+    display: flex; flex-direction: column;
+  }
+  .pillar-card .p-num {
+    font-size: 14px; font-weight: 500;
+    color: var(--coral-600); margin-bottom: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pillar-card .p-title {
+    font-size: 22px; font-weight: 500;
+    color: var(--ink); line-height: 1.18;
+    letter-spacing: -0.008em; margin-bottom: 12px;
+  }
+  .pillar-card .p-sub {
+    font-size: 14px; font-weight: 400;
+    color: var(--muted); line-height: 1.55;
+    margin-top: auto;
+  }
+  .agentic-band {
+    margin-top: 14px;
+    background: var(--surface);
+    border: 0.5px solid var(--coral-400);
+    border-radius: 12px;
+    padding: 18px 22px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .agentic-band .lbl { font-size: 16px; font-weight: 500; color: var(--ink); }
+  .agentic-band .lbl b { color: var(--coral-600); font-weight: 500; }
+  .agentic-band .tag { font-size: 12px; font-weight: 500; color: var(--coral-600); }
+
+  /* PILLAR PRINCIPLE */
+  .pillar-principle {
+    display: grid;
+    grid-template-columns: 0.8fr 1.6fr;
+    gap: 6vw;
+    align-items: center;
+  }
+  .pillar-principle .roman {
+    font-size: 88px; font-weight: 500;
+    color: var(--coral-400); line-height: 1;
+    letter-spacing: -0.02em; margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pillar-principle .label {
+    font-size: 13px; font-weight: 500; color: var(--muted);
+  }
+  .pillar-principle h1 { font-size: 48px; max-width: 16ch; }
+
+  /* PROOF VIGNETTES */
+  .vignettes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 6px;
+  }
+  .vignette {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 22px 26px;
+    font-size: 17px; font-weight: 400;
+    color: var(--ink); line-height: 1.55;
+    position: relative;
+    padding-left: 30px;
+  }
+  .vignette::before {
+    content: "";
+    position: absolute;
+    left: 16px; top: 24px; bottom: 24px;
+    width: 2px; border-radius: 2px;
+    background: var(--coral-400);
+  }
+  .metric-card {
+    margin-top: 16px;
+    background: var(--surface-alt);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .metric-card .k { font-size: 13px; font-weight: 500; color: var(--muted); }
+  .metric-card .v {
+    font-size: 28px; font-weight: 500; color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .metric-card .v .arrow { color: var(--coral-400); margin: 0 8px; }
+
+  /* Coming-next callout (Pillar 1 proof) */
+  .next-card {
+    margin-top: 16px;
+    background: var(--surface);
+    border: 0.5px solid var(--coral-200);
+    border-radius: 12px;
+    padding: 22px 26px;
+  }
+  .next-card .label {
+    font-size: 13px; font-weight: 500;
+    color: var(--coral-600);
+    margin-bottom: 10px;
+  }
+  .next-card .body {
+    font-size: 17px; font-weight: 400;
+    color: var(--ink); line-height: 1.6;
+  }
+  .next-card .body b { color: var(--coral-600); font-weight: 500; }
+
+  /* PROOF 3-COL */
+  .proof-three {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 14px; margin-top: 4px;
+  }
+  .proof-card {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 24px; display: flex; flex-direction: column;
+    min-height: 220px;
+  }
+  .proof-card .tag {
+    font-size: 13px; font-weight: 500;
+    color: var(--coral-600); margin-bottom: 14px;
+  }
+  .proof-card .copy {
+    font-size: 17px; font-weight: 400;
+    color: var(--ink); line-height: 1.5;
+    margin-bottom: 22px;
+  }
+  .proof-card .stat-block {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 0.5px solid var(--rule);
+  }
+  .proof-card .stat-block .v {
+    font-size: 32px; font-weight: 500;
+    color: var(--ink); letter-spacing: -0.012em;
+    margin-bottom: 4px;
+  }
+  .proof-card .stat-block .k {
+    font-size: 13px; font-weight: 400; color: var(--muted); line-height: 1.5;
+  }
+
+  /* OLD / NEW */
+  .old-new {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin-top: 4px;
+  }
+  .col {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 24px 26px;
+  }
+  .col.new { border-color: var(--coral-200); }
+  .col .tag {
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .col.new .tag { color: var(--coral-600); }
+  .col p {
+    font-size: 18px; font-weight: 400; color: var(--ink);
+    line-height: 1.5; margin-bottom: 12px;
+  }
+  .col p:last-child { margin-bottom: 0; }
+
+  .footline {
+    margin-top: 20px;
+    background: var(--surface-alt);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 18px 24px;
+    font-size: 18px; font-weight: 500; color: var(--ink);
+    max-width: 80ch;
+  }
+
+  /* NUMBERS */
+  .numbers {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; margin-top: 6px;
+  }
+  .num-card {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 28px 24px 24px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .num-card .v {
+    font-size: 48px; font-weight: 500; color: var(--ink);
+    line-height: 1; letter-spacing: -0.018em;
+  }
+  .num-card .k {
+    font-size: 13px; font-weight: 400; color: var(--muted); line-height: 1.5;
+  }
+  .num-footer {
+    margin-top: 22px;
+    font-size: 20px; font-weight: 400; color: var(--ink);
+    max-width: 64ch; line-height: 1.5;
+  }
+  .num-footer b { color: var(--coral-600); font-weight: 500; }
+
+  /* HIVE slide (Pillar 4 visualization) */
+  .hive { align-items: stretch; }
+  .hive h2 { font-size: 28px; margin-bottom: 16px; }
+  .hive-canvas {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+  }
+  .hive-canvas svg { width: 100%; height: 100%; max-height: 38vh; }
+  .signal-grid {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .signal-card {
+    background: var(--surface-alt);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .signal-card .label {
+    font-size: 13px; font-weight: 500;
+    color: var(--coral-600);
+  }
+  .signal-card .example {
+    font-size: 13px; font-weight: 400;
+    color: var(--ink); line-height: 1.5;
+  }
+
+  /* AGENTIC */
+  .agentic { align-items: stretch; }
+  .agentic h1 { font-size: 36px; margin-bottom: 6px; }
+  .agentic .sub {
+    font-size: 17px; font-weight: 400; color: var(--muted);
+    line-height: 1.5; margin-bottom: 18px; max-width: 64ch;
+  }
+  .agentic-canvas {
+    flex: 1;
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 24px 28px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .agentic-canvas svg { width: 100%; height: 100%; max-height: 46vh; }
+
+  .stepper {
+    margin-top: 16px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .stepper .dots { display: flex; gap: 8px; }
+  .stepper .dot {
+    width: 8px; height: 8px; border-radius: 999px;
+    background: var(--surface);
+    border: 0.5px solid var(--rule-strong);
+    transition: background 240ms ease-out, border-color 240ms ease-out;
+  }
+  .stepper .dot.on { background: var(--coral-400); border-color: var(--coral-400); }
+  .stepper .caption {
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    min-height: 18px;
+  }
+  .stepper .caption b { color: var(--ink); font-weight: 500; }
+
+  /* progressive SVG reveal — agentic */
+  .ag-el { opacity: 0; transition: opacity 320ms ease-out; }
+  .agentic[data-step="1"] .ag-step-1 { opacity: 1; }
+  .agentic[data-step="2"] .ag-step-1,
+  .agentic[data-step="2"] .ag-step-2 { opacity: 1; }
+  .agentic[data-step="3"] .ag-step-1,
+  .agentic[data-step="3"] .ag-step-2,
+  .agentic[data-step="3"] .ag-step-3 { opacity: 1; }
+  .agentic[data-step="4"] .ag-step-1,
+  .agentic[data-step="4"] .ag-step-2,
+  .agentic[data-step="4"] .ag-step-3,
+  .agentic[data-step="4"] .ag-step-4 { opacity: 1; }
+  .agentic[data-step="5"] .ag-step-1,
+  .agentic[data-step="5"] .ag-step-2,
+  .agentic[data-step="5"] .ag-step-3,
+  .agentic[data-step="5"] .ag-step-4,
+  .agentic[data-step="5"] .ag-step-5 { opacity: 1; }
+  .agentic[data-step="6"] .ag-el { opacity: 1; }
+
+  /* FOCUS (mortgage + trust) */
+  .focus-pair {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin-top: 4px;
+  }
+  .focus-card {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 28px 30px;
+    display: flex; flex-direction: column; gap: 16px;
+    min-height: 280px;
+  }
+  .focus-card.coral { border-color: var(--coral-200); }
+  .focus-card .tag {
+    font-size: 13px; font-weight: 500; color: var(--coral-600);
+  }
+  .focus-card .name {
+    font-size: 26px; font-weight: 500; color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .focus-card .why {
+    font-size: 16px; font-weight: 400;
+    color: var(--ink-soft); line-height: 1.55;
+  }
+  .focus-card .scope {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 0.5px solid var(--rule);
+    font-size: 13px; font-weight: 400;
+    color: var(--muted); line-height: 1.55;
+  }
+
+  /* FOUNDATION (shared substrate) */
+  .six-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .six-grid .item {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 22px 24px;
+    display: flex; flex-direction: column; gap: 10px;
+    min-height: 140px;
+  }
+  .six-grid .item .l {
+    font-size: 12px; font-weight: 500; color: var(--coral-600);
+    font-variant-numeric: tabular-nums;
+  }
+  .six-grid .item .h {
+    font-size: 19px; font-weight: 500; color: var(--ink);
+    letter-spacing: -0.006em;
+  }
+  .six-grid .item .d {
+    font-size: 13px; font-weight: 400;
+    color: var(--muted); line-height: 1.55;
+    margin-top: auto;
+  }
+
+  /* CURVE SLIDE */
+  .curve { align-items: stretch; }
+  .curve h1 { font-size: 36px; margin-bottom: 6px; }
+  .curve .sub {
+    font-size: 17px; font-weight: 400; color: var(--muted);
+    line-height: 1.5; margin-bottom: 18px; max-width: 70ch;
+  }
+  .curve-canvas {
+    flex: 1;
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 24px 28px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .curve-canvas svg { width: 100%; height: 100%; max-height: 46vh; }
+  .curve .legend {
+    display: flex; gap: 28px; margin-top: 14px;
+    font-size: 12px; font-weight: 500; color: var(--muted);
+  }
+  .curve .legend .swatch {
+    display: inline-block; width: 18px; height: 2px;
+    margin-right: 8px; vertical-align: 3px;
+  }
+  .curve .legend .swatch.gray {
+    background: transparent;
+    border-top: 1.5px dashed var(--hint);
+    height: 0;
+  }
+  .curve .legend .swatch.coral { background: var(--coral-400); }
+
+  /* curve reveal */
+  .c-el { opacity: 0; transition: opacity 320ms ease-out; }
+  .curve[data-step="0"] .c-step-0 { opacity: 1; }
+  .curve[data-step="1"] .c-step-0,
+  .curve[data-step="1"] .c-step-1 { opacity: 1; }
+  .curve[data-step="2"] .c-step-0,
+  .curve[data-step="2"] .c-step-1,
+  .curve[data-step="2"] .c-step-2 { opacity: 1; }
+  .curve[data-step="3"] .c-el { opacity: 1; }
+
+  /* actual-curve draw animation */
+  .actual-curve {
+    stroke-dasharray: 1800;
+    stroke-dashoffset: 1800;
+    transition: stroke-dashoffset 1400ms cubic-bezier(0.22,0.61,0.36,1);
+  }
+  .curve[data-step="2"] .actual-curve,
+  .curve[data-step="3"] .actual-curve {
+    stroke-dashoffset: 0;
+  }
+
+  /* MODEL SHIFT slide */
+  .model { align-items: stretch; }
+  .model h1 { font-size: 36px; margin-bottom: 6px; }
+  .model .sub {
+    font-size: 17px; font-weight: 400; color: var(--muted);
+    line-height: 1.5; margin-bottom: 18px; max-width: 76ch;
+  }
+  .model-canvas {
+    flex: 1;
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 22px 26px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .model-canvas svg { width: 100%; height: 100%; max-height: 50vh; }
+
+  .m-el { opacity: 0; transition: opacity 320ms ease-out; }
+  .model[data-step="1"] .m-step-1 { opacity: 1; }
+  .model[data-step="2"] .m-step-1,
+  .model[data-step="2"] .m-step-2 { opacity: 1; }
+
+  /* NOT WAITING slide */
+  .not-waiting .lede {
+    font-size: 20px; font-weight: 400;
+    color: var(--ink-soft); line-height: 1.5;
+    max-width: 70ch; margin-bottom: 18px;
+  }
+  .not-waiting .five-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .not-waiting .b-card {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 22px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+    min-height: 200px;
+  }
+  .not-waiting .b-card .l {
+    font-size: 14px; font-weight: 500;
+    color: var(--coral-600);
+  }
+  .not-waiting .b-card .t {
+    font-size: 14px; font-weight: 400;
+    color: var(--ink); line-height: 1.55;
+  }
+
+  /* OWN slide */
+  .own .four {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 14px; margin-top: 4px;
+  }
+  .own .own-card {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 24px 26px;
+    display: flex; flex-direction: column; gap: 10px;
+    min-height: 150px;
+  }
+  .own .own-card .l {
+    font-size: 13px; font-weight: 500; color: var(--coral-600);
+  }
+  .own .own-card .t {
+    font-size: 19px; font-weight: 400; color: var(--ink);
+    line-height: 1.5;
+  }
+
+  /* CLOSE */
+  .close { justify-content: center; align-items: flex-start; }
+  .close .end {
+    font-size: 44px; font-weight: 500;
+    color: var(--ink); line-height: 1.18;
+    letter-spacing: -0.012em; max-width: 26ch;
+  }
+  .close .end em {
+    font-style: normal; color: var(--coral-400); font-weight: 500;
+  }
+
+  /* WAVES — 3-col pillar variant */
+  .map-grid.cols3 { grid-template-columns: repeat(3, 1fr); }
+  .map-grid.cols3 .pillar-card { min-height: 250px; }
+
+  /* WHAT DOES NOT CHANGE — four-word grid */
+  .constants {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 14px; margin-top: 4px;
+  }
+  .constant-card {
+    background: var(--surface);
+    border: 0.5px solid var(--rule);
+    border-radius: 12px;
+    min-height: 160px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .constant-card .w {
+    font-size: 30px; font-weight: 500; color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .coda {
+    margin-top: 24px;
+    font-size: 18px; font-weight: 400; color: var(--ink-soft);
+    line-height: 1.6; max-width: 66ch;
+  }
+
+  /* PRINT */
+  @media print {
+    @page { size: landscape; margin: 0; }
+    html, body { overflow: visible; }
+    .progress, .nav-hint { display: none !important; }
+    .deck { height: auto; }
+    .slide {
+      position: relative;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      height: 100vh;
+      page-break-after: always;
+      break-after: page;
+      transition: none;
+    }
+    .ag-el, .c-el { opacity: 1 !important; }
+    .actual-curve { stroke-dashoffset: 0 !important; }
+    .stepper .dot { background: var(--coral-400); border-color: var(--coral-400); }
+  }
+</style>
+</head>
+<body class="cover-on">
+
+<div class="progress"><span id="cur">1</span> / <span id="tot">20</span></div>
+<div class="nav-hint">← / → or space to advance</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 — COVER -->
+  <section class="slide slide-cover active" data-cover="true">
+    <div class="cover-inner">
+      <div class="cover-title">The private bank, <em>/</em><br/>rebuilt around agents.</div>
+      <div class="cover-sub">One platform, every person in the bank. A working vision — end to end.</div>
+    </div>
+  </section>
+
+  <!-- 2 — OPENING FRAME -->
+  <section class="slide opener">
+    <div class="eyebrow"><span class="num">01</span>The frame</div>
+    <div class="frame">Private banking has never been short of ideas, products, or capital. <em>It has always been short of attention.</em></div>
+    <div class="attrib">The constraint this strategy removes.</div>
+  </section>
+
+  <!-- 3 — THE SHIFT -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">02</span>The shift</div>
+    <h1 class="small">Why this is not another tooling cycle.</h1>
+    <div class="three-cards">
+      <div class="stmt-card">
+        <div class="n">i</div>
+        <div class="t">The models stopped answering and started acting. An agent is not a better search box — it is a member of staff.</div>
+      </div>
+      <div class="stmt-card">
+        <div class="n">ii</div>
+        <div class="t">The cost of an analyst-hour has collapsed toward zero. Attention per client is no longer fixed by headcount.</div>
+      </div>
+      <div class="stmt-card">
+        <div class="n">iii</div>
+        <div class="t">Advantage is moving to whoever holds the data agents run on. Nobody holds what we hold.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 — POSTURE -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">03</span>Our posture</div>
+    <h1 class="small">Before the build, three things we hold true.</h1>
+    <div class="three-cards">
+      <div class="stmt-card">
+        <div class="n">One</div>
+        <div class="t">One platform, many surfaces. We build the agent workforce once, and dress it differently for each person who uses it.</div>
+      </div>
+      <div class="stmt-card">
+        <div class="n">Two</div>
+        <div class="t">Agents are employees. Identity, entitlements, a supervisor, a log — from day one. That discipline is what lets us move fast.</div>
+      </div>
+      <div class="stmt-card">
+        <div class="n">Three</div>
+        <div class="t">The human owns the relationship. Agents expand what an advisor can hold. They never change who the client calls.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 — STRATEGY MAP -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">04</span>The strategy in one frame</div>
+    <h1 class="small">Four pillars. One platform underneath.</h1>
+    <div class="map-grid">
+      <div class="pillar-card">
+        <div class="p-num">i</div>
+        <div class="p-title">Every advisor, amplified</div>
+        <div class="p-sub">An army of agents behind each one — commanded by the best, guiding the rest.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="p-num">ii</div>
+        <div class="p-title">Intelligence that compounds</div>
+        <div class="p-sub">The Hive, the client graph, and specialist ideas reaching every right client.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="p-num">iii</div>
+        <div class="p-title">Machinery that disappears</div>
+        <div class="p-sub">Operations run straight through. People keep the judgment calls.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="p-num">iv</div>
+        <div class="p-title">The human edge</div>
+        <div class="p-sub">A faster bench, leaders who see live, meetings clients cannot get anywhere else.</div>
+      </div>
+    </div>
+    <div class="agentic-band">
+      <span class="lbl"><b>Agentic</b> — every agent licensed, supervised, and logged on one platform.</span>
+      <span class="tag">The thread across all four</span>
+    </div>
+  </section>
+
+  <!-- 6 — PILLAR 1 PRINCIPLE -->
+  <section class="slide pillar-principle">
+    <div class="left">
+      <div class="roman">i</div>
+      <div class="label">Pillar one</div>
+    </div>
+    <div class="right">
+      <h1>Every advisor, amplified.</h1>
+      <p class="body" style="margin-bottom: 16px;">One text box, backed by everything behind it, and a day view that stays a step ahead. The advisor says what they want — an analysis, a plan, a trade check, an app that does not exist yet — and the platform answers, builds, or executes. No menus. No eleven systems.</p>
+      <p class="body"><b style="color:var(--coral-600); font-weight:500;">“Watch Brian’s concentrated position. If it moves, draft the hedge and get me on the phone.”</b> One sentence, and an agent is on the job — one of dozens each advisor runs like staff. This is how the best already think. Now it is how their tools work.</p>
+    </div>
+  </section>
+
+  <!-- 7 — PILLAR 1 PROOF -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">i</span>Pillar one · A day on the platform</div>
+    <h2>What a Tuesday looks like.</h2>
+    <div class="vignettes">
+      <div class="vignette">The inbox agent worked the night shift: every request triaged, the routine ones executed and logged, the judgment calls drafted and queued for a decision over coffee.</div>
+      <div class="vignette">Before the open, the day view is set — which clients to call, why now, what changed since the last conversation — with the brief already attached.</div>
+      <div class="vignette">A question that used to be a week of analyst work — which clients are overexposed if rates hold and spreads widen — comes back in minutes, across every position and every document.</div>
+      <div class="vignette">A client asks for something mid-conversation. The advisor asks the platform. A working tool — a scenario, a comparison, a plan — is on the screen before the call ends.</div>
+    </div>
+    <div class="next-card">
+      <div class="label">The autonomy dial</div>
+      <div class="body">None of this is all-or-nothing. Every workflow starts <b>human-approved</b>. As an agent builds a record, low-risk actions graduate to <b>straight-through</b> — with the log to prove every step. Autonomy is earned, never assumed.</div>
+    </div>
+  </section>
+
+  <!-- 8 — PILLAR 1 · THE OTHER NINETY PERCENT -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">i</span>Pillar one · The other ninety percent</div>
+    <h1 class="small">Same platform, guided mode.</h1>
+    <div class="old-new">
+      <div class="col">
+        <div class="tag">Today</div>
+        <p>A generic playbook and an annual review.</p>
+        <p>Coaching when the manager has time.</p>
+        <p>An operations backlog eating the calendar.</p>
+      </div>
+      <div class="col new">
+        <div class="tag">Next</div>
+        <p>The top decile’s practice, running as the defaults — who to call today, what to say, what to prepare.</p>
+        <p>A private coach on every call and email. The advisor’s data, the advisor’s coach — never a report card.</p>
+        <p>A graduation path from guided mode to full command, earned in the open.</p>
+      </div>
+    </div>
+    <div class="footline">The point is not to monitor the ninety percent. It is to make the best advisors’ practice the starting point for everyone.</div>
+  </section>
+
+  <!-- 9 — PILLAR 2 PRINCIPLE -->
+  <section class="slide pillar-principle">
+    <div class="left">
+      <div class="roman">ii</div>
+      <div class="label">Pillar two</div>
+    </div>
+    <div class="right">
+      <h1>Intelligence that compounds.</h1>
+      <p class="body" style="font-style: italic; color: var(--ink); margin-bottom: 16px; border-left: 2px solid var(--coral-400); padding-left: 16px;">“What are you seeing? What are clients like mine doing about it?”<br/><span style="font-style: normal; font-size: 14px; color: var(--muted);">— Every advisor, every volatile week.</span></p>
+      <p class="body">The Hive answers it, live. Every conversation, question, trade, product uptake, and market reaction across the bank — captured as it happens, queryable around the clock, visible before it becomes obvious to the market. <b style="color:var(--coral-600); font-weight:500;">Cohorts, never clients.</b> The Hive speaks in patterns — clients like this are doing this; advisors with books like yours are pitching structured notes — with minimum cohort sizes and entitlements built in, so no client is ever identifiable. Aggregation is not a constraint on the product. It is the product.</p>
+    </div>
+  </section>
+
+  <!-- 10 — PILLAR 2 · THE HIVE IN MOTION -->
+  <section class="slide hive">
+    <div class="eyebrow"><span class="num">ii</span>Pillar two · The Hive in motion</div>
+    <h2>From signal in, to signal out.</h2>
+    <div class="hive-canvas">
+      <svg viewBox="0 0 1200 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The Hive: six live data sources feeding advisors first, then specialists">
+        <defs>
+          <marker id="h-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Surrounding hexes -->
+        <path d="M 320 73 L 295 116 L 245 116 L 220 73 L 245 30 L 295 30 Z"
+              fill="#FFFFFF" stroke="#2C2C2A" stroke-opacity="0.25" stroke-width="0.5"/>
+        <text x="270" y="69" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#993C1D">Conversations</text>
+        <text x="270" y="83" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="10" fill="#5F5E5A">calls · meetings</text>
+
+        <path d="M 395 117 L 370 160 L 320 160 L 295 117 L 320 74 L 370 74 Z"
+              fill="#FFFFFF" stroke="#2C2C2A" stroke-opacity="0.25" stroke-width="0.5"/>
+        <text x="345" y="114" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#993C1D">Questions</text>
+        <text x="345" y="128" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="10" fill="#5F5E5A">what clients ask</text>
+
+        <path d="M 395 203 L 370 246 L 320 246 L 295 203 L 320 160 L 370 160 Z"
+              fill="#FFFFFF" stroke="#2C2C2A" stroke-opacity="0.25" stroke-width="0.5"/>
+        <text x="345" y="200" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#993C1D">Trades</text>
+        <text x="345" y="214" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="10" fill="#5F5E5A">every flow</text>
+
+        <path d="M 320 247 L 295 290 L 245 290 L 220 247 L 245 204 L 295 204 Z"
+              fill="#FFFFFF" stroke="#2C2C2A" stroke-opacity="0.25" stroke-width="0.5"/>
+        <text x="270" y="243" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#993C1D">Products</text>
+        <text x="270" y="257" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="10" fill="#5F5E5A">uptake · launches</text>
+
+        <path d="M 245 203 L 220 246 L 170 246 L 145 203 L 170 160 L 220 160 Z"
+              fill="#FFFFFF" stroke="#2C2C2A" stroke-opacity="0.25" stroke-width="0.5"/>
+        <text x="195" y="200" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#993C1D">Reactions</text>
+        <text x="195" y="214" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="10" fill="#5F5E5A">market · client</text>
+
+        <path d="M 245 117 L 220 160 L 170 160 L 145 117 L 170 74 L 220 74 Z"
+              fill="#FFFFFF" stroke="#2C2C2A" stroke-opacity="0.25" stroke-width="0.5"/>
+        <text x="195" y="114" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#993C1D">Email</text>
+        <text x="195" y="128" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="10" fill="#5F5E5A">every thread</text>
+
+        <!-- CENTER hex (THE HIVE) -->
+        <path d="M 320 160 L 295 203 L 245 203 L 220 160 L 245 117 L 295 117 Z"
+              fill="#D85A30" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="270" y="158" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="13" font-weight="500" fill="#FFFFFF">THE HIVE</text>
+        <text x="270" y="174" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="10" fill="#FAECE7">realtime · queryable</text>
+
+        <!-- Flow arrow (Hive → Advisors) -->
+        <path d="M 410 160 L 620 130" fill="none" stroke="#D85A30" stroke-width="1.5" marker-end="url(#h-arr)"/>
+        <text x="500" y="135" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#993C1D">live</text>
+
+        <!-- Advisors box (primary) -->
+        <rect x="630" y="80" width="510" height="120" rx="12" fill="#FAECE7" stroke="#D85A30" stroke-width="0.5"/>
+        <text x="654" y="112" font-family="-apple-system, sans-serif" font-size="12" font-weight="500" fill="#993C1D">ADVISORS</text>
+        <text x="654" y="140" font-family="-apple-system, sans-serif" font-size="20" font-weight="500" fill="#2C2C2A">See what is moving, before it is obvious.</text>
+        <text x="654" y="166" font-family="-apple-system, sans-serif" font-size="13" fill="#5F5E5A">What clients like yours are asking. What books like yours are doing.</text>
+        <text x="654" y="184" font-family="-apple-system, sans-serif" font-size="13" fill="#5F5E5A">Around the clock — in cohorts, never names.</text>
+
+        <!-- Downstream arrow Advisors → Specialists -->
+        <path d="M 885 200 L 885 235" fill="none" stroke="#888780" stroke-width="0.5" marker-end="url(#h-arr)" stroke-dasharray="3,2"/>
+        <text x="895" y="222" font-family="-apple-system, sans-serif" font-size="10" fill="#5F5E5A">and</text>
+
+        <!-- Specialists box (secondary) -->
+        <rect x="700" y="240" width="370" height="60" rx="10" fill="#FFFFFF" stroke="#2C2C2A" stroke-opacity="0.25" stroke-width="0.5"/>
+        <text x="720" y="263" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#5F5E5A">SPECIALISTS</text>
+        <text x="720" y="284" font-family="-apple-system, sans-serif" font-size="14" font-weight="500" fill="#2C2C2A">The same signal shapes the next idea — and the next broadcast.</text>
+      </svg>
+    </div>
+
+    <div class="signal-grid">
+      <div class="signal-card">
+        <div class="label">Flows</div>
+        <div class="example">Buy and sell skew this week. Hedging spikes. Where concentration is building across the book.</div>
+      </div>
+      <div class="signal-card">
+        <div class="label">Peer patterns</div>
+        <div class="example">Advisors with books like yours are pitching structured notes to rate-sensitive clients — and what they are saying.</div>
+      </div>
+      <div class="signal-card">
+        <div class="label">A cross-cutting narrative</div>
+        <div class="example" style="font-style: italic;">“Founders across the region are gifting appreciated stock ahead of year-end — planning conversations are surging.”</div>
+      </div>
+      <div class="signal-card">
+        <div class="label">Safe by design</div>
+        <div class="example">Cohorts, never clients. Minimum cohort sizes, entitlements, and a log on every query.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 — PILLAR 2 · THE CLIENT GRAPH -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">ii</span>Pillar two · The client graph</div>
+    <h1 class="small">Every interaction teaches the bank its clients.</h1>
+    <div class="four-cards">
+      <div class="anchor-card">
+        <div class="h"><em>Capture.</em></div>
+        <div class="b">Calls, transcripts, emails, meetings, questions — read and structured by agents, under the client team’s entitlements.</div>
+      </div>
+      <div class="anchor-card">
+        <div class="h"><em>Understand.</em></div>
+        <div class="b">A living picture of each client: goals, worries, life events, language. Not a profile from onboarding — a memory.</div>
+      </div>
+      <div class="anchor-card">
+        <div class="h"><em>Anticipate.</em></div>
+        <div class="b">The next conversation each client needs, drafted before the advisor asks. Tailored to the person, not the segment.</div>
+      </div>
+      <div class="anchor-card">
+        <div class="h"><em>Protect.</em></div>
+        <div class="b">A client’s data serves that client’s team. Every access is entitled, purposeful, and logged.</div>
+      </div>
+    </div>
+    <div class="footline">Advice that sounds like someone was listening — because the system actually was.</div>
+  </section>
+
+  <!-- 12 — PILLAR 2 · SIGNAL OUT (BROADCAST) -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">ii</span>Pillar two · Signal out</div>
+    <h2>One specialist’s best idea, in front of every right client. Same day.</h2>
+    <div class="proof-three">
+      <div class="proof-card">
+        <div class="tag">The idea</div>
+        <div class="copy">The CIO publishes a view — on gold, on rates, on a sector. Once. A broadcast agent takes it from there; the specialist never writes it twice.</div>
+        <div class="stat-block">
+          <div class="v">Weeks <span style="color:var(--coral-400)">→</span> same day</div>
+          <div class="k">From published view to client conversation</div>
+        </div>
+      </div>
+      <div class="proof-card">
+        <div class="tag">The translation</div>
+        <div class="copy">The agent turns the view into per-client actions: clients matching one profile see one move, clients matching another see a different one. Suitability and entitlements filter every match before anything lands in an advisor’s day view.</div>
+        <div class="stat-block">
+          <div class="v" style="font-size:24px;">One view <span style="color:var(--coral-400)">→</span> every fitting client</div>
+          <div class="k">Matched on profile, suitability, and mandate</div>
+        </div>
+      </div>
+      <div class="proof-card">
+        <div class="tag">The trail</div>
+        <div class="copy">This is advice at scale, and we treat it that way. The filter logic is reviewed and approved before it ever runs, and every recommendation traces back to its source.</div>
+        <div class="stat-block">
+          <div class="v" style="font-size:24px;">Reviewable by design</div>
+          <div class="k">View → filter → advisor → client, all logged</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 — PILLAR 3 PRINCIPLE -->
+  <section class="slide pillar-principle">
+    <div class="left">
+      <div class="roman">iii</div>
+      <div class="label">Pillar three</div>
+    </div>
+    <div class="right">
+      <h1>Machinery that disappears.</h1>
+      <p class="body" style="margin-bottom: 16px;">An address change. A mortgage application. A line of credit. Account maintenance. Today each one is a ticket, a queue, and a wait. Next, an agent assembles the work end to end, and a person decides only where judgment matters.</p>
+      <p class="body">Advisors stop waiting on operations. Clients stop waiting on the bank. And the capacity that comes back is what pays for everything else in this deck.</p>
+    </div>
+  </section>
+
+  <!-- 14 — AGENTIC (animated) -->
+  <section class="slide agentic" id="agentic" data-step="0">
+    <div class="eyebrow"><span class="num">05</span>The anatomy of an agent</div>
+    <h1 class="small">One anatomy. Every agent.</h1>
+    <div class="sub">An advisor’s sentence, a client email, a CIO view, an operations request — every signal moves through the same six steps.</div>
+
+    <div class="agentic-canvas">
+      <svg viewBox="0 0 1200 460" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The agentic stack: signal, agent, tools, data, human review, action">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <g class="ag-el ag-step-1">
+          <rect x="32" y="200" width="170" height="80" rx="8" fill="#FFFFFF" stroke="#2C2C2A" stroke-opacity="0.30" stroke-width="0.5"/>
+          <text x="117" y="232" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="15" font-weight="500" fill="#2C2C2A">Inbound signal</text>
+          <text x="117" y="256" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="12" fill="#5F5E5A">A sentence, an event</text>
+        </g>
+        <g class="ag-el ag-step-2">
+          <line x1="202" y1="240" x2="298" y2="240" stroke="#2C2C2A" stroke-opacity="0.45" stroke-width="0.5" marker-end="url(#arrow)"/>
+        </g>
+
+        <g class="ag-el ag-step-2">
+          <rect x="298" y="190" width="220" height="100" rx="8" fill="#FAECE7" stroke="#D85A30" stroke-width="0.5"/>
+          <text x="408" y="222" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="16" font-weight="500" fill="#2C2C2A">The agent</text>
+          <text x="408" y="244" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="12" font-weight="500" fill="#993C1D">Orchestrator</text>
+          <text x="408" y="266" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="12" fill="#5F5E5A">Plans, calls tools, composes</text>
+        </g>
+
+        <g class="ag-el ag-step-3">
+          <path d="M 408 190 L 408 142 L 160 142 L 160 122" fill="none" stroke="#2C2C2A" stroke-opacity="0.30" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <path d="M 408 142 L 304 142 L 304 122" fill="none" stroke="#2C2C2A" stroke-opacity="0.30" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <path d="M 408 142 L 512 142 L 512 122" fill="none" stroke="#2C2C2A" stroke-opacity="0.30" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <path d="M 408 142 L 656 142 L 656 122" fill="none" stroke="#2C2C2A" stroke-opacity="0.30" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <g font-family="-apple-system, sans-serif" text-anchor="middle">
+            <text x="160" y="100" font-size="12" font-weight="500" fill="#993C1D">i</text>
+            <text x="160" y="118" font-size="12" font-weight="500" fill="#444441">Research</text>
+            <text x="304" y="100" font-size="12" font-weight="500" fill="#993C1D">ii</text>
+            <text x="304" y="118" font-size="12" font-weight="500" fill="#444441">Operations</text>
+            <text x="512" y="100" font-size="12" font-weight="500" fill="#993C1D">iii</text>
+            <text x="512" y="118" font-size="12" font-weight="500" fill="#444441">Build</text>
+            <text x="656" y="100" font-size="12" font-weight="500" fill="#993C1D">iv</text>
+            <text x="656" y="118" font-size="12" font-weight="500" fill="#444441">Monitor</text>
+          </g>
+        </g>
+
+        <g class="ag-el ag-step-4">
+          <line x1="518" y1="240" x2="614" y2="240" stroke="#2C2C2A" stroke-opacity="0.45" stroke-width="0.5" marker-end="url(#arrow)"/>
+          <rect x="614" y="190" width="200" height="100" rx="8" fill="#FFFFFF" stroke="#2C2C2A" stroke-opacity="0.30" stroke-width="0.5"/>
+          <text x="714" y="222" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="16" font-weight="500" fill="#2C2C2A">Our data + model</text>
+          <text x="714" y="244" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="12" font-weight="500" fill="#5F5E5A">The proprietary substrate</text>
+          <text x="714" y="266" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="12" fill="#5F5E5A">The client graph, the Hive</text>
+        </g>
+
+        <g class="ag-el ag-step-5">
+          <line x1="814" y1="240" x2="910" y2="240" stroke="#2C2C2A" stroke-opacity="0.45" stroke-width="0.5" marker-end="url(#arrow)"/>
+          <rect x="910" y="190" width="180" height="100" rx="8" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.5"/>
+          <text x="1000" y="222" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="16" font-weight="500" fill="#2C2C2A">Human review</text>
+          <text x="1000" y="244" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="12" font-weight="500" fill="#993C1D">The judgment gate</text>
+          <text x="1000" y="266" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="12" fill="#5F5E5A">Approve · escalate</text>
+        </g>
+
+        <g class="ag-el ag-step-6">
+          <line x1="1090" y1="240" x2="1160" y2="240" stroke="#D85A30" stroke-width="0.5" marker-end="url(#arrow)"/>
+          <text x="1166" y="236" font-family="-apple-system, sans-serif" font-size="16" font-weight="500" fill="#993C1D">Action</text>
+          <text x="1166" y="258" font-family="-apple-system, sans-serif" font-size="11" fill="#5F5E5A">Shipped &amp; logged</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="stepper">
+      <div class="dots" id="agDots">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+      <div class="caption" id="agCap">Press space to build the diagram, one step at a time.</div>
+    </div>
+  </section>
+
+  <!-- 15 — THE OPERATING MODEL SHIFT (animated) -->
+  <section class="slide model" id="model" data-step="0">
+    <div class="eyebrow"><span class="num">06</span>The operating model</div>
+    <h1 class="small">From coordinating tasks to overseeing agents.</h1>
+    <div class="sub">A line of credit today: the file moves down a queue, each step waiting on the one before it. Next, agents run the steps in parallel, and people approve at the checkpoints that matter.</div>
+
+    <div class="model-canvas">
+      <svg viewBox="0 0 1200 460" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Operating model shift: from sequential coordination to parallel oversight">
+        <defs>
+          <marker id="m-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- ===== TOP PANEL: TODAY ===== -->
+        <text x="12" y="20" font-family="-apple-system, sans-serif" font-size="13" font-weight="500" fill="#5F5E5A">Today</text>
+        <text x="64" y="20" font-family="-apple-system, sans-serif" font-size="12" font-weight="400" fill="#888780">People in sequence. A handoff at every step.</text>
+
+        <g font-family="-apple-system, sans-serif" font-size="12" font-weight="500" fill="#444441" text-anchor="end">
+          <text x="160" y="64">Banker</text>
+          <text x="160" y="100">Credit</text>
+          <text x="160" y="136">Documentation</text>
+          <text x="160" y="172">Servicing</text>
+        </g>
+
+        <g fill="#FAF8F1" stroke="#2C2C2A" stroke-opacity="0.10" stroke-width="0.5">
+          <rect x="180" y="48" width="900" height="28" rx="4"/>
+          <rect x="180" y="84" width="900" height="28" rx="4"/>
+          <rect x="180" y="120" width="900" height="28" rx="4"/>
+          <rect x="180" y="156" width="900" height="28" rx="4"/>
+        </g>
+
+        <g>
+          <rect x="190" y="52" width="180" height="20" rx="3" fill="#5F5E5A"/>
+          <text x="280" y="66" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#FFFFFF" text-anchor="middle">Intake</text>
+
+          <rect x="390" y="88" width="200" height="20" rx="3" fill="#5F5E5A"/>
+          <text x="490" y="102" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#FFFFFF" text-anchor="middle">Underwrite</text>
+
+          <rect x="610" y="124" width="180" height="20" rx="3" fill="#5F5E5A"/>
+          <text x="700" y="138" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#FFFFFF" text-anchor="middle">Document</text>
+
+          <rect x="810" y="160" width="220" height="20" rx="3" fill="#5F5E5A"/>
+          <text x="920" y="174" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#FFFFFF" text-anchor="middle">Fund</text>
+        </g>
+
+        <g stroke="#888780" stroke-width="0.5" fill="none">
+          <path d="M 370 62 L 390 98" marker-end="url(#m-arr)"/>
+          <path d="M 590 98 L 610 134" marker-end="url(#m-arr)"/>
+          <path d="M 790 134 L 810 170" marker-end="url(#m-arr)"/>
+        </g>
+
+        <text x="1090" y="116" font-family="-apple-system, sans-serif" font-size="13" font-weight="500" fill="#5F5E5A">~ days</text>
+
+        <line x1="0" y1="206" x2="1200" y2="206" stroke="#2C2C2A" stroke-opacity="0.15" stroke-width="0.5"/>
+
+        <!-- ===== BOTTOM PANEL: NEXT ===== -->
+        <text x="12" y="234" font-family="-apple-system, sans-serif" font-size="13" font-weight="500" fill="#993C1D">Next</text>
+        <text x="64" y="234" font-family="-apple-system, sans-serif" font-size="12" font-weight="400" fill="#888780">Agents in parallel. Human oversight at the checkpoints.</text>
+
+        <!-- Oversight row (step 2) -->
+        <g class="m-el m-step-2">
+          <text x="160" y="284" font-family="-apple-system, sans-serif" font-size="12" font-weight="500" fill="#993C1D" text-anchor="end">Specialist</text>
+          <rect x="180" y="266" width="780" height="28" rx="4" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.5"/>
+          <text x="570" y="284" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#993C1D" text-anchor="middle">Oversees · approves at checkpoints</text>
+
+          <g fill="#D85A30">
+            <circle cx="370" cy="280" r="4"/>
+            <circle cx="570" cy="280" r="4"/>
+            <circle cx="770" cy="280" r="4"/>
+          </g>
+
+          <g stroke="#D85A30" stroke-opacity="0.40" stroke-width="0.5" stroke-dasharray="2,3">
+            <line x1="370" y1="294" x2="370" y2="316"/>
+            <line x1="570" y1="294" x2="570" y2="316"/>
+            <line x1="770" y1="294" x2="770" y2="316"/>
+          </g>
+        </g>
+
+        <!-- Agent lanes (step 1) -->
+        <g class="m-el m-step-1">
+          <g font-family="-apple-system, sans-serif" font-size="12" font-weight="500" fill="#444441" text-anchor="end">
+            <text x="160" y="332">Agent · Intake</text>
+            <text x="160" y="368">Agent · Underwrite</text>
+            <text x="160" y="404">Agent · Document</text>
+            <text x="160" y="440">Agent · Fund</text>
+          </g>
+
+          <g fill="#FAF8F1" stroke="#2C2C2A" stroke-opacity="0.10" stroke-width="0.5">
+            <rect x="180" y="316" width="780" height="28" rx="4"/>
+            <rect x="180" y="352" width="780" height="28" rx="4"/>
+            <rect x="180" y="388" width="780" height="28" rx="4"/>
+            <rect x="180" y="424" width="780" height="28" rx="4"/>
+          </g>
+
+          <g fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5">
+            <rect x="190" y="320" width="760" height="20" rx="3"/>
+            <rect x="190" y="356" width="760" height="20" rx="3"/>
+            <rect x="190" y="392" width="760" height="20" rx="3"/>
+            <rect x="190" y="428" width="760" height="20" rx="3"/>
+          </g>
+
+          <g font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#712B13" text-anchor="middle">
+            <text x="570" y="334">Runs autonomously</text>
+            <text x="570" y="370">Runs autonomously</text>
+            <text x="570" y="406">Runs autonomously</text>
+            <text x="570" y="442">Runs autonomously</text>
+          </g>
+
+          <rect x="960" y="316" width="44" height="136" rx="3" fill="#D85A30"/>
+          <text x="982" y="390" font-family="-apple-system, sans-serif" font-size="11" font-weight="500" fill="#FFFFFF" text-anchor="middle">Done</text>
+
+          <text x="1018" y="390" font-family="-apple-system, sans-serif" font-size="13" font-weight="500" fill="#993C1D">~ hours</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="stepper">
+      <div class="dots" id="modelDots">
+        <span class="dot"></span><span class="dot"></span>
+      </div>
+      <div class="caption" id="modelCap">Today: people in sequence — a handoff at every step. Days to weeks.</div>
+    </div>
+  </section>
+
+  <!-- 16 — THE TRUST ARCHITECTURE -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">07</span>The trust architecture</div>
+    <h1 class="small">Built the way we hire: licensed, supervised, accountable.</h1>
+    <div class="six-grid">
+      <div class="item">
+        <div class="l">01</div>
+        <div class="h">Identity &amp; entitlements</div>
+        <div class="d">Every agent acts as someone, for someone, within limits it cannot exceed.</div>
+      </div>
+      <div class="item">
+        <div class="l">02</div>
+        <div class="h">Review queues</div>
+        <div class="d">Human gates where judgment matters. Autonomy graduates only as the record earns it.</div>
+      </div>
+      <div class="item">
+        <div class="l">03</div>
+        <div class="h">Audit, end to end</div>
+        <div class="d">Every action logged, every decision reconstructable. Agent work leaves a cleaner trail than human work.</div>
+      </div>
+      <div class="item">
+        <div class="l">04</div>
+        <div class="h">Aggregation by design</div>
+        <div class="d">The Hive speaks in cohorts, never clients — minimum sizes and entitlements on every query.</div>
+      </div>
+      <div class="item">
+        <div class="l">05</div>
+        <div class="h">Reviewable recommendation logic</div>
+        <div class="d">Broadcast filters are approved before they run. Advice at scale is still advice.</div>
+      </div>
+      <div class="item">
+        <div class="l">06</div>
+        <div class="h">Kill switches</div>
+        <div class="d">Any agent, paused instantly by anyone who supervises it. No exceptions.</div>
+      </div>
+    </div>
+    <div class="footline">This is not the compliance tax on the vision. It is the design that lets the vision run fast.</div>
+  </section>
+
+  <!-- 17 — PILLAR 4 PRINCIPLE -->
+  <section class="slide pillar-principle">
+    <div class="left">
+      <div class="roman">iv</div>
+      <div class="label">Pillar four</div>
+    </div>
+    <div class="right">
+      <h1>The human edge.</h1>
+      <p class="body" style="margin-bottom: 16px;">The bank does not get less human as the agents arrive. The human parts get sharper: new bankers train harder before they ever meet a real client, leaders see their market as it moves, and clients sit in rooms with capability they cannot get anywhere else.</p>
+      <p class="body">Three builds carry it: <b style="color:var(--coral-600); font-weight:500;">the simulator, the tower, and the room.</b></p>
+    </div>
+  </section>
+
+  <!-- 18 — THE SIMULATOR & THE TOWER -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">iv</span>Pillar four · The bench and the tower</div>
+    <h1 class="small">Grow the bench. Run the market.</h1>
+    <div class="focus-pair">
+      <div class="focus-card coral">
+        <div class="tag">The simulator</div>
+        <div class="name">Clients who are not real</div>
+        <div class="why">Every new analyst runs a synthetic book: AI clients with inboxes, voices, portfolios, and life events that respond like the real thing. They prospect, plan, and handle a market shock — scored and coached on every move — the way surgeons train on simulators before an operating room.</div>
+        <div class="scope">Synthetic clients → live scenarios → scoring → coaching → banker-ready in months, not years.</div>
+      </div>
+      <div class="focus-card coral">
+        <div class="tag">The tower</div>
+        <div class="name">Leaders who see live</div>
+        <div class="why">Coverage, pipeline, coaching signals, early warnings on client and talent risk — a live view of the market a leader runs, refreshed all day. The agents draft the intervention, not just the report.</div>
+        <div class="scope">Live market view → coaching signals → early warnings → drafted actions.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 19 — THE ROOM -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">iv</span>Pillar four · The room</div>
+    <h1 class="small">The reason to walk into our office.</h1>
+    <div class="focus-pair">
+      <div class="focus-card coral">
+        <div class="tag">In every meeting room</div>
+        <div class="name">Intelligence you cannot rent</div>
+        <div class="why">When a client sits down with a banker, an AI joins the room — live analysis on the screen, drawing on the client’s full picture, the firm’s data, and the CIO’s current views. The banker drives; the client watches an idea become analysis in real time. Compute is cheap. This context is not.</div>
+        <div class="scope">The meeting nobody else can run.</div>
+      </div>
+      <div class="focus-card">
+        <div class="tag">Before anyone calls</div>
+        <div class="name">Self-serve that respects the client</div>
+        <div class="why">The everyday questions — answered instantly, at any hour, in the client’s own context. And a handoff to the human relationship at exactly the moment it matters, with the full thread attached.</div>
+        <div class="scope">The platform absorbs the routine. The relationship gets the interesting questions.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 20 — THE ORDER OF OPERATIONS -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">08</span>The order of operations</div>
+    <h1 class="small">Automate. Amplify. Astonish.</h1>
+    <div class="map-grid cols3">
+      <div class="pillar-card">
+        <div class="p-num">First</div>
+        <div class="p-title">Automate</div>
+        <div class="p-sub">The machinery and the control plane: straight-through operations, agent licensing, the data foundation. The least glamorous work — and the wedge. It returns capacity and builds trust.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="p-num">Then</div>
+        <div class="p-title">Amplify</div>
+        <div class="p-sub">The field: the day view, the inbox agent, the Hive, the first broadcasts. The bank starts to feel different to work in.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="p-num">After</div>
+        <div class="p-title">Astonish</div>
+        <div class="p-sub">The experience: the room, the simulator, self-serve, autonomy earned into more of the flow. The bank feels different to be a client of.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 21 — WHY PROGRESS WILL NOT LOOK LINEAR -->
+  <section class="slide curve" id="curve" data-step="0">
+    <div class="eyebrow"><span class="num">09</span>Trust the shape</div>
+    <h1 class="small">Why progress will not look linear.</h1>
+    <div class="sub">The first stretch is data plumbing, entitlements, and the control plane. It will look slow. It is the reason nothing after it is.</div>
+
+    <div class="curve-canvas">
+      <svg viewBox="0 0 1200 460" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Non-linear AI capability deployment curve across the private bank">
+
+        <!-- Axes -->
+        <g class="c-el c-step-0">
+          <rect x="60" y="40" width="380" height="340" fill="#FAECE7" fill-opacity="0.45"/>
+          <rect x="440" y="40" width="180" height="340" fill="#F5C4B3" fill-opacity="0.30"/>
+
+          <line x1="60" y1="380" x2="1180" y2="380" stroke="#2C2C2A" stroke-opacity="0.45" stroke-width="0.5"/>
+          <line x1="60" y1="40" x2="60" y2="380" stroke="#2C2C2A" stroke-opacity="0.45" stroke-width="0.5"/>
+
+          <g font-family="-apple-system, sans-serif" font-size="11" fill="#5F5E5A" text-anchor="middle">
+            <text x="60" y="402">0</text>
+            <text x="260" y="402">6</text>
+            <text x="440" y="402">12</text>
+            <text x="620" y="402">18</text>
+            <text x="800" y="402">24</text>
+            <text x="980" y="402">30</text>
+            <text x="1160" y="402">36</text>
+          </g>
+          <text x="620" y="428" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="12" font-weight="500" fill="#5F5E5A">Months from now</text>
+
+          <text x="22" y="210" transform="rotate(-90, 22, 210)" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="12" font-weight="500" fill="#5F5E5A">AI capability deployed across the private bank</text>
+
+          <line x1="58" y1="210" x2="62" y2="210" stroke="#2C2C2A" stroke-opacity="0.45" stroke-width="0.5"/>
+          <line x1="58" y1="40" x2="62" y2="40" stroke="#2C2C2A" stroke-opacity="0.45" stroke-width="0.5"/>
+        </g>
+
+        <!-- Linear expected curve -->
+        <g class="c-el c-step-1">
+          <path d="M 60 370 L 1160 60"
+                stroke="#888780" stroke-width="1.5"
+                stroke-dasharray="6,4" fill="none"/>
+          <text x="960" y="180" font-family="-apple-system, sans-serif" font-size="13" font-weight="500" fill="#5F5E5A">What we might expect</text>
+          <text x="960" y="198" font-family="-apple-system, sans-serif" font-size="11" fill="#888780">A steady linear ramp</text>
+        </g>
+
+        <!-- Actual trajectory S-curve -->
+        <g class="c-el c-step-2">
+          <path class="actual-curve"
+                d="M 60 365 C 200 363, 360 358, 440 345 C 510 332, 570 305, 620 275 C 720 215, 880 110, 1160 55"
+                stroke="#D85A30" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <text x="780" y="320" font-family="-apple-system, sans-serif" font-size="13" font-weight="500" fill="#993C1D">What we actually expect</text>
+          <text x="780" y="338" font-family="-apple-system, sans-serif" font-size="11" fill="#5F5E5A">Foundation, then acceleration</text>
+        </g>
+
+        <!-- Phase annotations -->
+        <g class="c-el c-step-3">
+          <line x1="440" y1="56" x2="440" y2="380" stroke="#2C2C2A" stroke-opacity="0.20" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="620" y1="56" x2="620" y2="380" stroke="#2C2C2A" stroke-opacity="0.20" stroke-width="0.5" stroke-dasharray="3,3"/>
+
+          <g font-family="-apple-system, sans-serif" text-anchor="middle">
+            <text x="250" y="60" font-size="12" font-weight="500" fill="#993C1D">Foundation building</text>
+            <text x="250" y="76" font-size="11" fill="#5F5E5A">Months 0–12</text>
+
+            <text x="530" y="60" font-size="12" font-weight="500" fill="#993C1D">First leverage</text>
+            <text x="530" y="76" font-size="11" fill="#5F5E5A">Months 12–18</text>
+
+            <text x="890" y="60" font-size="12" font-weight="500" fill="#993C1D">Acceleration across the bank</text>
+            <text x="890" y="76" font-size="11" fill="#5F5E5A">Months 18–36</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <div class="legend">
+      <span><span class="swatch gray"></span>Expected — linear</span>
+      <span><span class="swatch coral"></span>Actual — foundation then acceleration</span>
+    </div>
+
+    <div class="stepper">
+      <div class="dots" id="curveDots">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+      <div class="caption" id="curveCap">Press space to plot the trajectory.</div>
+    </div>
+  </section>
+
+  <!-- 22 — WHAT DOES NOT CHANGE -->
+  <section class="slide">
+    <div class="eyebrow"><span class="num">10</span>What does not change</div>
+    <h1 class="small">Four things this strategy is built to protect.</h1>
+    <div class="constants">
+      <div class="constant-card"><div class="w">Relationship</div></div>
+      <div class="constant-card"><div class="w">Discretion</div></div>
+      <div class="constant-card"><div class="w">Judgment</div></div>
+      <div class="constant-card"><div class="w">Trust</div></div>
+    </div>
+    <div class="coda">Agents change what an advisor can hold, not who the client calls. Every build in this deck is measured against one test: does it make the human more present, or less.</div>
+  </section>
+
+  <!-- 23 — CLOSE -->
+  <section class="slide close">
+    <div class="eyebrow"><span class="num">11</span>Close</div>
+    <div class="end">The full attention of the entire firm, for every client. <em>It was never possible. It is now.</em></div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var idx = 0;
+  var total = slides.length;
+  document.getElementById('tot').textContent = total;
+
+  // Generic stepper config — each entry binds a slide to step state
+  var STEPPERS = [
+    {
+      el: document.getElementById('agentic'),
+      capEl: document.getElementById('agCap'),
+      dotEls: document.getElementById('agDots').querySelectorAll('.dot'),
+      steps: [
+        'Press space to build the diagram, one step at a time.',
+        'A signal enters — an advisor’s sentence, a client email, a market event.',
+        'The agent takes the signal and plans the work.',
+        'It reaches for tools — research, operations, building, monitoring.',
+        'It runs on our data — the client graph, the Hive, the firm’s memory.',
+        'Output passes the judgment gate — approval where it matters, straight through where it is earned.',
+        'Only then does the action ship. Every step logged.'
+      ],
+      leads: ['','signal','agent','tools','our data','judgment gate','ship'],
+      step: 0,
+      max: 6
+    },
+    {
+      el: document.getElementById('curve'),
+      capEl: document.getElementById('curveCap'),
+      dotEls: document.getElementById('curveDots').querySelectorAll('.dot'),
+      steps: [
+        'Press space to plot the trajectory.',
+        'What we might expect — a steady linear ramp across the bank.',
+        'What we actually expect — flat through the foundation period, then steep.',
+        'Three phases. Foundation, first leverage, acceleration.'
+      ],
+      leads: ['','steady linear ramp','actually expect','Three phases'],
+      step: 0,
+      max: 3
+    },
+    {
+      el: document.getElementById('model'),
+      capEl: document.getElementById('modelCap'),
+      dotEls: document.getElementById('modelDots').querySelectorAll('.dot'),
+      steps: [
+        'Today: people in sequence — a handoff at every step. Days to weeks.',
+        'Next: agents in parallel — same work, no queue between the steps.',
+        'And the specialist’s role shifts to oversight — checkpoints, not coordination.'
+      ],
+      leads: ['in sequence','in parallel','oversight'],
+      step: 0,
+      max: 2
+    }
+  ];
+
+  function getStepper() {
+    for (var i = 0; i < STEPPERS.length; i++) {
+      if (slides[idx] === STEPPERS[i].el) return STEPPERS[i];
+    }
+    return null;
+  }
+
+  function renderStepper(s) {
+    s.el.setAttribute('data-step', String(s.step));
+    s.dotEls.forEach(function (d, i) { d.classList.toggle('on', i < s.step); });
+    var text = s.steps[s.step];
+    var lead = s.leads[s.step];
+    if (lead && text.toLowerCase().indexOf(lead.toLowerCase()) !== -1) {
+      var k = text.toLowerCase().indexOf(lead.toLowerCase());
+      s.capEl.innerHTML = text.slice(0, k) + '<b>' + text.slice(k, k + lead.length) + '</b>' + text.slice(k + lead.length);
+    } else {
+      s.capEl.textContent = text;
+    }
+  }
+
+  function resetSteppers() {
+    STEPPERS.forEach(function (s) {
+      if (slides[idx] !== s.el) {
+        s.step = 0;
+        renderStepper(s);
+      }
+    });
+  }
+
+  function render() {
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === idx); });
+    document.getElementById('cur').textContent = (idx + 1);
+    document.body.classList.toggle('cover-on', slides[idx].dataset.cover === 'true');
+    resetSteppers();
+    var s = getStepper();
+    if (s) renderStepper(s);
+  }
+
+  function next() {
+    var s = getStepper();
+    if (s && s.step < s.max) {
+      s.step += 1;
+      renderStepper(s);
+      return;
+    }
+    if (idx < total - 1) { idx += 1; render(); }
+  }
+  function prev() {
+    var s = getStepper();
+    if (s && s.step > 0) {
+      s.step -= 1;
+      renderStepper(s);
+      return;
+    }
+    if (idx > 0) { idx -= 1; render(); }
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'Enter') {
+      e.preventDefault(); next();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'Backspace') {
+      e.preventDefault(); prev();
+    } else if (e.key === 'Home') { idx = 0; render(); }
+    else if (e.key === 'End') { idx = total - 1; render(); }
+    else if (e.key === 'p' || e.key === 'P') { window.print(); }
+    else if (e.key === 'a' || e.key === 'A') {
+      var ag = STEPPERS[0].el;
+      idx = slides.indexOf(ag); render();
+    }
+    else if (e.key === 'c' || e.key === 'C') {
+      var cv = STEPPERS[1].el;
+      idx = slides.indexOf(cv); render();
+    }
+    else if (e.key === 'm' || e.key === 'M') {
+      var md = STEPPERS[2].el;
+      idx = slides.indexOf(md); render();
+    }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('a,button')) return;
+    if (e.clientX < window.innerWidth * 0.25) prev(); else next();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
